@@ -60,9 +60,20 @@ void setup() {
 
   // Comment out if you want a quiet console
   mt_set_debug(true);
+  
   randomSeed(micros());
 }
 
+// This callback function will be called repeatedly as the radio's node
+// report comes in. For each node received, it will be called with
+// the second parameter set to MT_NR_IN_PROGRESS. At the end of the
+// report, if the IDs matched, the callback will be called with
+// NULL as the first parameter and the second set to either MT_NR_DONE
+// (if it was indeed the reply to our request) or MT_NR_INVALID (if it
+// turned out to have been a reply to someone else's request).
+//
+// Everything passed to this callback could be destroyed immediately
+// after it returns, so it should save it somewhere else if it needs it.
 void node_report_callback(mt_node_t * nodeinfo, mt_nr_progress_t progress) {
   if (progress == MT_NR_INVALID) {
     Serial.println("Oops, ignore all that. It was a reply to someone else's query.");
@@ -101,7 +112,7 @@ void node_report_callback(mt_node_t * nodeinfo, mt_nr_progress_t progress) {
     Serial.print(nodeinfo->longitude);
     Serial.print("; ");
     Serial.print(nodeinfo->altitude);
-    Serial.print("m above sea level moving at ");
+    Serial.print(" meters above sea level moving at ");
     Serial.print(nodeinfo->ground_speed);
     Serial.print(" m/s as of time=");
     Serial.print(nodeinfo->time_of_last_position);
@@ -115,8 +126,14 @@ void node_report_callback(mt_node_t * nodeinfo, mt_nr_progress_t progress) {
 }
 
 void loop() {
+  // Record the time that this loop began (in milliseconds since the device booted)
   uint32_t now = millis();
+
+  // Run the Meshtastic loop, and see if it's able to send requests to the device yet
   bool can_send = mt_loop(now);
+
+  // If we can send requests, and it's time to do so, make a request and schedule
+  // the next one.
   if (can_send && now >= next_node_report_time) {
     mt_request_node_report(node_report_callback);
     next_node_report_time = now + NODE_REPORT_PERIOD;
