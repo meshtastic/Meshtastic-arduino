@@ -1,24 +1,40 @@
-// Meshtastic Arduino GPS client
-// by Mike Schiraldi
-//
-// Get an Adafruit Feather M0 WiFi (or some other board, but then edit the pin config below)
-// and put your Meshtastic node in WiFi AP mode, then put your SSID and wifi password in arduino_secrets.h
-// and run this code with the serial monitor open. Your arduino should connect to the node, request information
-// on it and all other nodes it knows about, and print a report of what it finds.
+/*
+    Meshtastic Arduino GPS client
+
+    Connects to a Meshtastic node via WiFi or Serial (and maybe one day Bluetooth),
+    asks it for information about itself and all other nodes in the mesh that it
+    knows about, and prints a report on their basic characteristics, including all
+    available location data
+
+    To use, get an Adafruit Feather M0 WiFi (or some other board, but then edit
+    the pin config below) and put your Meshtastic node in WiFi AP mode, then put
+    your SSID and wifi password in arduino_secrets.h and run this code with the
+    serial monitor open.
+
+    Created March 2022
+    By Mike Schiraldi
+
+*/
+
 #include <Meshtastic.h>
 
-// These are the pins for an Adafruit Feather M0 WiFi
+// Pins to use for WiFi; these defaults are for an Adafruit Feather M0 WiFi.
 #define WIFI_CS_PIN 8
 #define WIFI_IRQ_PIN 7
 #define WIFI_RESET_PIN 4
 #define WIFI_ENABLE_PIN 2
 
+// Pins to use for SoftwareSerial. Boards that don't use SoftwareSerial, and
+// instead provide their own Serial1 connection through fixed pins (like the
+// aforementioned Feather) will ignore these settings and use their own.
+// On the Feather, these pins are marked "RX0" and "TX1".
 #define SERIAL_RX 2
 #define SERIAL_TX 3
 
 // Request a node report every this many msec
 #define NODE_REPORT_PERIOD (30 * 1000)
 
+// When millis() is >= this, it's time to request a node report.
 uint32_t next_node_report_time = 0;
 
 void setup() {
