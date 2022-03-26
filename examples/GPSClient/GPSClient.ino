@@ -1,5 +1,5 @@
 /*
-    Meshtastic Arduino GPS client
+    Meshtastic GPS client
 
     Connects to a Meshtastic node via WiFi or Serial (and maybe one day Bluetooth),
     asks it for information about itself and all other nodes in the mesh that it
@@ -28,8 +28,8 @@
 // instead provide their own Serial1 connection through fixed pins (like the
 // aforementioned Feather) will ignore these settings and use their own.
 // On the Feather, these pins are marked "RX0" and "TX1".
-#define SERIAL_RX 2
-#define SERIAL_TX 3
+#define SERIAL_RX_PIN 2
+#define SERIAL_TX_PIN 3
 
 // Request a node report every this many msec
 #define NODE_REPORT_PERIOD (30 * 1000)
@@ -54,7 +54,7 @@ void setup() {
   mt_wifi_init(WIFI_CS_PIN, WIFI_IRQ_PIN, WIFI_RESET_PIN, WIFI_ENABLE_PIN, WIFI_SSID, WIFI_PASS);
 #else
   Serial.print("serial");
-  mt_serial_init(SERIAL_RX, SERIAL_TX);
+  mt_serial_init(SERIAL_RX_PIN, SERIAL_TX_PIN);
 #endif
   Serial.println(" mode");
 
@@ -112,7 +112,9 @@ void node_report_callback(mt_node_t * nodeinfo, mt_nr_progress_t progress) {
     Serial.print(nodeinfo->longitude);
     Serial.print("; ");
     Serial.print(nodeinfo->altitude);
-    Serial.print(" meters above sea level moving at ");
+    Serial.print(" meters above sea level moving ");
+    Serial.print(nodeinfo->ground_track);
+    Serial.print(" degrees from north at ");
     Serial.print(nodeinfo->ground_speed);
     Serial.print(" m/s as of time=");
     Serial.print(nodeinfo->time_of_last_position);

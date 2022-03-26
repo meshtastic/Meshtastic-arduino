@@ -1,3 +1,5 @@
+#ifdef MT_WIFI_SUPPORTED
+
 #include <WiFi101.h>
 #include "mt_internals.h"
 
@@ -175,3 +177,5 @@ bool mt_wifi_send_radio(const char * buf, size_t len) {
 void mt_wifi_reset_idle_timeout(uint32_t now) {
   next_connect_attempt = now + IDLE_TIMEOUT;
 }
+
+#endif
