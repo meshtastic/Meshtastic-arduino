@@ -1,10 +1,10 @@
 #include "mt_internals.h"
 
-#ifdef ARDUINO_ARCH_SAMD
-  #define serial (&Serial1)
-#else
+#ifdef MT_SOFTWARESERIAL_SUPPORTED
   #include <SoftwareSerial.h>
   SoftwareSerial *serial;
+#else
+  #define serial (&Serial1)
 #endif
 
 void mt_serial_init(int8_t rx_pin, int8_t tx_pin) {

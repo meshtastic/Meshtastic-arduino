@@ -24,6 +24,7 @@ typedef struct _Position {
     int32_t latitude_i; // divide by 1e-7 to get degrees
     int32_t longitude_i;
     int32_t altitude; // In meters above MSL (but see issue #359)
+    uint32_t ground_track; // The direction we're moving
     int32_t battery_level; // 1-100 (0 means not provided)
     uint32_t time;  // The last time we received a position
     uint32_t pos_timestamp;  // The timestamp on that position
@@ -89,6 +90,7 @@ extern "C" {
 #define Position_time_tag                        9
 #define Position_pos_timestamp_tag               12
 #define Position_ground_speed_tag                20
+#define Position_ground_track_tag                21
 #define ToRadio_want_config_id_tag               100
 #define ToRadio_disconnect_tag                   104
 #define NodeInfo_num_tag                         1
@@ -117,7 +119,8 @@ X(a, STATIC,   SINGULAR, INT32,    altitude,          3) \
 X(a, STATIC,   SINGULAR, INT32,    battery_level,     4) \
 X(a, STATIC,   SINGULAR, FIXED32,  time,              9) \
 X(a, STATIC,   SINGULAR, FIXED32,  pos_timestamp,    12) \
-X(a, STATIC,   SINGULAR, UINT32,   ground_speed,     20)
+X(a, STATIC,   SINGULAR, UINT32,   ground_speed,     20) \
+X(a, STATIC,   SINGULAR, UINT32,   ground_track,     21)
 #define Position_CALLBACK NULL
 #define Position_DEFAULT NULL
 

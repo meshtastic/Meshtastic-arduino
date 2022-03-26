@@ -1,6 +1,12 @@
 #ifndef MT_INTERNALS_H
 #define MT_INTERNALS_H
 
+#ifdef ARDUINO_ARCH_SAMD
+#define MT_WIFI_SUPPORTED
+#else
+#define MT_SOFTWARESERIAL_SUPPORTED
+#endif
+
 #include "Meshtastic.h"
 #include "mt_nanopb.h"
 
