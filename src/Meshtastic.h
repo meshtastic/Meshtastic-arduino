@@ -5,10 +5,10 @@
 #include "generated/mesh.pb.h"
 
 // Some sane limits on a few strings that the protocol would otherwise allow to be unlimited length
-#define MAX_USER_ID_LEN sizeof(User.long_name);
-#define MAX_LONG_NAME_LEN 32
-#define MAX_SHORT_NAME_LEN 8
-#define MAX_MACADDR_LEN 32
+#define MAX_USER_ID_LEN (sizeof(User.id) - 1);
+#define MAX_LONG_NAME_LEN (sizeof(User.long_name) - 1);
+#define MAX_SHORT_NAME_LEN (sizeof(User.short_name) - 1);
+#define MAX_MACADDR_LEN (sizeof(User.macaddr) - 1);
 
 extern uint32_t my_node_num;
 
