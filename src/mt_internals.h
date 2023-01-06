@@ -8,7 +8,6 @@
 #endif
 
 #include "Meshtastic.h"
-#include "mt_nanopb.h"
 
 extern bool mt_debugging;
 void mt_debug_print(const char * s);

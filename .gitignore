@@ -1,0 +1,14 @@
+.pio
+
+# ignore vscode IDE settings files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.code-workspace
+
+.DS_Store
+Thumbs.db
+nanopb*
+__pycache__
+
