@@ -48,7 +48,7 @@ void setup() {
   Serial.print("Booted Meshtastic GPS client v1.0 in ");
 
 // Change to 0 to use a serial connection
-#if 1
+#if 0
   #include "arduino_secrets.h"
   Serial.print("wifi");
   mt_wifi_init(WIFI_CS_PIN, WIFI_IRQ_PIN, WIFI_RESET_PIN, WIFI_ENABLE_PIN, WIFI_SSID, WIFI_PASS);
@@ -113,8 +113,6 @@ void node_report_callback(mt_node_t * nodeinfo, mt_nr_progress_t progress) {
     Serial.print("; ");
     Serial.print(nodeinfo->altitude);
     Serial.print(" meters above sea level moving ");
-    Serial.print(nodeinfo->ground_track);
-    Serial.print(" degrees from north at ");
     Serial.print(nodeinfo->ground_speed);
     Serial.print(" m/s as of time=");
     Serial.print(nodeinfo->time_of_last_position);

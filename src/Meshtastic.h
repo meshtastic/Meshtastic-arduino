@@ -2,13 +2,15 @@
 #define MESHTASTIC_H
 
 #include <Arduino.h>
-#include "generated/mesh.pb.h"
+#include "generated/meshtastic/mesh.pb.h"
+#include <pb_encode.h>
+#include <pb_decode.h>
 
 // Some sane limits on a few strings that the protocol would otherwise allow to be unlimited length
-#define MAX_USER_ID_LEN (sizeof(User.id) - 1);
-#define MAX_LONG_NAME_LEN (sizeof(User.long_name) - 1);
-#define MAX_SHORT_NAME_LEN (sizeof(User.short_name) - 1);
-#define MAX_MACADDR_LEN (sizeof(User.macaddr) - 1);
+#define MAX_USER_ID_LEN (sizeof(meshtastic_User().id) - 1)
+#define MAX_LONG_NAME_LEN (sizeof(meshtastic_User().long_name) - 1)
+#define MAX_SHORT_NAME_LEN (sizeof(meshtastic_User().short_name) - 1)
+#define MAX_MACADDR_LEN (sizeof(meshtastic_User().macaddr) - 1)
 
 extern uint32_t my_node_num;
 
@@ -29,6 +31,9 @@ typedef struct {
   uint32_t last_heard_from;
   uint32_t last_heard_position;
   uint32_t time_of_last_position;
+  float voltage;
+  float channel_utilization;
+  float air_util_tx;
 } mt_node_t;
 
 // Initialize, using wifi to connect to the MT radio
