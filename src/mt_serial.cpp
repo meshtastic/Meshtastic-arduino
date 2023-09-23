@@ -7,9 +7,10 @@
   #define serial (&Serial1)
 #endif
 
-void mt_serial_init(int8_t rx_pin, int8_t tx_pin) {
+void mt_serial_init(int8_t rx_pin, int8_t tx_pin, uint32_t baud) {
 #ifndef ARDUINO_ARCH_SAMD
   serial = new SoftwareSerial(rx_pin, tx_pin);
+  serial->begin(baud);
 #endif
   mt_wifi_mode = false;
   mt_serial_mode = true;
