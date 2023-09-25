@@ -2,13 +2,17 @@
 #define MESHTASTIC_H
 
 #include <Arduino.h>
-#include "generated/mesh.pb.h"
+#include "meshtastic/mesh.pb.h"
+#include <pb_encode.h>
+#include <pb_decode.h>
 
 // Some sane limits on a few strings that the protocol would otherwise allow to be unlimited length
-#define MAX_USER_ID_LEN (sizeof(User.id) - 1);
-#define MAX_LONG_NAME_LEN (sizeof(User.long_name) - 1);
-#define MAX_SHORT_NAME_LEN (sizeof(User.short_name) - 1);
-#define MAX_MACADDR_LEN (sizeof(User.macaddr) - 1);
+#define MAX_USER_ID_LEN (sizeof(meshtastic_User().id) - 1)
+#define MAX_LONG_NAME_LEN (sizeof(meshtastic_User().long_name) - 1)
+#define MAX_SHORT_NAME_LEN (sizeof(meshtastic_User().short_name) - 1)
+
+#define BAUD_DEFAULT 9600
+#define BROADCAST_ADDR 0xFFFFFFFF
 
 extern uint32_t my_node_num;
 
@@ -17,10 +21,10 @@ extern uint32_t my_node_num;
 typedef struct {
   uint32_t node_num;
   bool is_mine;
-  const char * user_id;
-  const char * long_name;
-  const char * short_name;
-  const char * macaddr;
+  bool has_user;
+  char user_id[MAX_USER_ID_LEN];
+  char long_name[MAX_LONG_NAME_LEN];
+  char short_name[MAX_SHORT_NAME_LEN];
   double latitude;
   double longitude;
   int8_t altitude;  // To the nearest meter above (or below) sea level
@@ -29,14 +33,17 @@ typedef struct {
   uint32_t last_heard_from;
   uint32_t last_heard_position;
   uint32_t time_of_last_position;
+  float voltage;
+  float channel_utilization;
+  float air_util_tx;
 } mt_node_t;
 
 // Initialize, using wifi to connect to the MT radio
 void mt_wifi_init(int8_t cs_pin, int8_t irq_pin, int8_t reset_pin,
     int8_t enable_pin, const char * ssid, const char * password);
 
-// Initialize, using serial pins to connect to the MT radio
-void mt_serial_init(int8_t rx_pin, int8_t tx_pin);
+// Initialize, using serial pins and baud rate to connect to the MT radio
+void mt_serial_init(int8_t rx_pin, int8_t tx_pin, uint32_t baud = BAUD_DEFAULT);
 
 // Call this once per loop() and pass the current millis(). Returns bool indicating whether the connection is ready.
 bool mt_loop(uint32_t now);
@@ -64,5 +71,11 @@ typedef enum {
 // Returns true if we were able to request the report, false if we couldn't
 // even do that.
 bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t));
+
+// Set the callback function that gets called when the node receives a text message.
+void set_text_message_callback(void (*callback)(uint32_t from, const char * text));
+
+// Send a text message with *text* as payload, to a destination node (optional), on a certain channel (optional).
+bool mt_send_text(const char * text, uint32_t dest = BROADCAST_ADDR, uint8_t channel_index = 0);
 
 #endif
