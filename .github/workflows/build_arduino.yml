@@ -1,18 +1,19 @@
-name: Build Arduino
-
+name: "CI"
 on:
+  pull_request:
   push:
-    branches: [ master ]
-  workflow_dispatch:
-
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  ci:
+    runs-on: ubuntu-20.04
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
-      - name: Arduino CI
-        uses: Arduino-CI/action@v0.1.6
-        env:
-          EXPECT_EXAMPLES: true
-          EXPECT_UNITTESTS: false
+    - name: Checkout this repository
+      uses: actions/checkout@v2
+    - name: Cache for arduino-ci
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.arduino15
+        key: ${{ runner.os }}-arduino
+    - name: Install nix
+      uses: cachix/install-nix-action@v12
+    - run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"

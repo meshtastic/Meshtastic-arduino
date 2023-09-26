@@ -25,8 +25,8 @@
 // A different baud rate to communicate with the Meshtastic device can be specified here
 #define BAUD_RATE 9600
 
-// Send a text message every this many msec
-#define SEND_PERIOD (300 * 1000)
+// Send a text message every this many seconds
+#define SEND_PERIOD 300
 
 uint32_t next_send_time = 0;
 
@@ -89,6 +89,6 @@ void loop() {
 
     mt_send_text("Hello, world!", dest, channel_index);
 
-    next_send_time = now + SEND_PERIOD;
+    next_send_time = now + SEND_PERIOD * 1000;
   }
 }
