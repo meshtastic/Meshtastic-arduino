@@ -1,0 +1,17 @@
+name: Build Arduino
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Arduino CI
+          uses: Arduino-CI/action@stable-1.x   # or latest, or a pinned version
+        env:
+          EXPECT_EXAMPLES: true
+          EXPECT_UNITTESTS: false
