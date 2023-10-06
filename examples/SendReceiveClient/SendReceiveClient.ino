@@ -29,6 +29,14 @@
 #define SEND_PERIOD 300
 
 uint32_t next_send_time = 0;
+bool not_yet_connected = true;
+
+// This callback function will be called whenever the radio connects to a node
+void connected_callback(mt_node_t *node, mt_nr_progress_t progress) {
+  if (not_yet_connected) 
+    Serial.println("Connected to Meshtastic device!");
+  not_yet_connected = false;
+}
 
 // This callback function will be called whenever the radio receives a text message
 void text_message_callback(uint32_t from, const char* text) {
@@ -67,6 +75,9 @@ void setup() {
   mt_set_debug(false);
   
   randomSeed(micros());
+
+  // Initial connection to the Meshtastic device
+  mt_request_node_report(connected_callback);
 
   // Register a callback function to be called whenever a text message is received
   set_text_message_callback(text_message_callback);
