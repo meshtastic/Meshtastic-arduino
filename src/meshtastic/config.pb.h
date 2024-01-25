@@ -201,7 +201,11 @@ typedef enum _meshtastic_Config_LoRaConfig_RegionCode {
     /* Ukraine 433mhz */
     meshtastic_Config_LoRaConfig_RegionCode_UA_433 = 14,
     /* Ukraine 868mhz */
-    meshtastic_Config_LoRaConfig_RegionCode_UA_868 = 15
+    meshtastic_Config_LoRaConfig_RegionCode_UA_868 = 15,
+    /* Malaysia 433mhz */
+    meshtastic_Config_LoRaConfig_RegionCode_MY_433 = 16,
+    /* Malaysia 919mhz */
+    meshtastic_Config_LoRaConfig_RegionCode_MY_919 = 17
 } meshtastic_Config_LoRaConfig_RegionCode;
 
 /* Standard predefined channel settings
@@ -281,10 +285,7 @@ typedef struct _meshtastic_Config_PositionConfig {
  or zero for the default of once every 30 seconds
  or a very large value (maxint) to update only once at boot. */
     uint32_t gps_update_interval;
-    /* How long should we try to get our position during each gps_update_interval attempt?  (in seconds)
- Or if zero, use the default of 30 seconds.
- If we don't get a new gps fix in that time, the gps will be put into sleep until  the next gps_update_rate
- window. */
+    /* Deprecated in favor of using smart / regular broadcast intervals as implicit attempt time */
     uint32_t gps_attempt_time;
     /* Bit field of boolean configuration options for POSITION messages
  (bitwise OR of PositionFlags) */
@@ -462,6 +463,8 @@ typedef struct _meshtastic_Config_LoRaConfig {
  in ignore_incoming will have packets they send dropped on receive (by router.cpp) */
     pb_size_t ignore_incoming_count;
     uint32_t ignore_incoming[3];
+    /* If true, the device will not process any packets received via LoRa that passed via MQTT anywhere on the path towards it. */
+    bool ignore_mqtt;
 } meshtastic_Config_LoRaConfig;
 
 typedef struct _meshtastic_Config_BluetoothConfig {
@@ -525,8 +528,8 @@ extern "C" {
 #define _meshtastic_Config_DisplayConfig_DisplayMode_ARRAYSIZE ((meshtastic_Config_DisplayConfig_DisplayMode)(meshtastic_Config_DisplayConfig_DisplayMode_COLOR+1))
 
 #define _meshtastic_Config_LoRaConfig_RegionCode_MIN meshtastic_Config_LoRaConfig_RegionCode_UNSET
-#define _meshtastic_Config_LoRaConfig_RegionCode_MAX meshtastic_Config_LoRaConfig_RegionCode_UA_868
-#define _meshtastic_Config_LoRaConfig_RegionCode_ARRAYSIZE ((meshtastic_Config_LoRaConfig_RegionCode)(meshtastic_Config_LoRaConfig_RegionCode_UA_868+1))
+#define _meshtastic_Config_LoRaConfig_RegionCode_MAX meshtastic_Config_LoRaConfig_RegionCode_MY_919
+#define _meshtastic_Config_LoRaConfig_RegionCode_ARRAYSIZE ((meshtastic_Config_LoRaConfig_RegionCode)(meshtastic_Config_LoRaConfig_RegionCode_MY_919+1))
 
 #define _meshtastic_Config_LoRaConfig_ModemPreset_MIN meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST
 #define _meshtastic_Config_LoRaConfig_ModemPreset_MAX meshtastic_Config_LoRaConfig_ModemPreset_LONG_MODERATE
@@ -564,7 +567,7 @@ extern "C" {
 #define meshtastic_Config_NetworkConfig_init_default {0, "", "", "", 0, _meshtastic_Config_NetworkConfig_AddressMode_MIN, false, meshtastic_Config_NetworkConfig_IpV4Config_init_default, ""}
 #define meshtastic_Config_NetworkConfig_IpV4Config_init_default {0, 0, 0, 0}
 #define meshtastic_Config_DisplayConfig_init_default {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0}
-#define meshtastic_Config_LoRaConfig_init_default {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}}
+#define meshtastic_Config_LoRaConfig_init_default {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}, 0}
 #define meshtastic_Config_BluetoothConfig_init_default {0, _meshtastic_Config_BluetoothConfig_PairingMode_MIN, 0}
 #define meshtastic_Config_init_zero              {0, {meshtastic_Config_DeviceConfig_init_zero}}
 #define meshtastic_Config_DeviceConfig_init_zero {_meshtastic_Config_DeviceConfig_Role_MIN, 0, 0, 0, 0, _meshtastic_Config_DeviceConfig_RebroadcastMode_MIN, 0, 0, 0, 0}
@@ -573,7 +576,7 @@ extern "C" {
 #define meshtastic_Config_NetworkConfig_init_zero {0, "", "", "", 0, _meshtastic_Config_NetworkConfig_AddressMode_MIN, false, meshtastic_Config_NetworkConfig_IpV4Config_init_zero, ""}
 #define meshtastic_Config_NetworkConfig_IpV4Config_init_zero {0, 0, 0, 0}
 #define meshtastic_Config_DisplayConfig_init_zero {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0}
-#define meshtastic_Config_LoRaConfig_init_zero   {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}}
+#define meshtastic_Config_LoRaConfig_init_zero   {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}, 0}
 #define meshtastic_Config_BluetoothConfig_init_zero {0, _meshtastic_Config_BluetoothConfig_PairingMode_MIN, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
@@ -644,6 +647,7 @@ extern "C" {
 #define meshtastic_Config_LoRaConfig_sx126x_rx_boosted_gain_tag 13
 #define meshtastic_Config_LoRaConfig_override_frequency_tag 14
 #define meshtastic_Config_LoRaConfig_ignore_incoming_tag 103
+#define meshtastic_Config_LoRaConfig_ignore_mqtt_tag 104
 #define meshtastic_Config_BluetoothConfig_enabled_tag 1
 #define meshtastic_Config_BluetoothConfig_mode_tag 2
 #define meshtastic_Config_BluetoothConfig_fixed_pin_tag 3
@@ -766,7 +770,8 @@ X(a, STATIC,   SINGULAR, UINT32,   channel_num,      11) \
 X(a, STATIC,   SINGULAR, BOOL,     override_duty_cycle,  12) \
 X(a, STATIC,   SINGULAR, BOOL,     sx126x_rx_boosted_gain,  13) \
 X(a, STATIC,   SINGULAR, FLOAT,    override_frequency,  14) \
-X(a, STATIC,   REPEATED, UINT32,   ignore_incoming, 103)
+X(a, STATIC,   REPEATED, UINT32,   ignore_incoming, 103) \
+X(a, STATIC,   SINGULAR, BOOL,     ignore_mqtt,     104)
 #define meshtastic_Config_LoRaConfig_CALLBACK NULL
 #define meshtastic_Config_LoRaConfig_DEFAULT NULL
 
@@ -802,7 +807,7 @@ extern const pb_msgdesc_t meshtastic_Config_BluetoothConfig_msg;
 #define meshtastic_Config_BluetoothConfig_size   10
 #define meshtastic_Config_DeviceConfig_size      32
 #define meshtastic_Config_DisplayConfig_size     28
-#define meshtastic_Config_LoRaConfig_size        77
+#define meshtastic_Config_LoRaConfig_size        80
 #define meshtastic_Config_NetworkConfig_IpV4Config_size 20
 #define meshtastic_Config_NetworkConfig_size     196
 #define meshtastic_Config_PositionConfig_size    60
