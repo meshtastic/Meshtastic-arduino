@@ -8,6 +8,7 @@ size_t pb_encode_to_bytes(uint8_t *destbuf, size_t destbufsize, const pb_msgdesc
     pb_ostream_t stream = pb_ostream_from_buffer(destbuf, destbufsize);
     if (!pb_encode(&stream, fields, src_struct)) {
         Serial.println("Panic: can't encode protobuf");
+        return 0;
     } else {
         return stream.bytes_written;
     }
