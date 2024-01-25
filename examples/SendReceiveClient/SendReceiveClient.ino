@@ -53,8 +53,9 @@ void telemetry_callback(uint32_t from, meshtastic_Telemetry* telemetry) {
   Serial.print("Received telemetry from ");
   Serial.print(from);
   Serial.print(": ");
-  if (telemetry->variant.device_metrics) {
-    Serial.println("Device Metrics: %fV", telemetry->variant.device_metrics->voltage);
+  if (telemetry->which_variant == meshtastic_Telemetry_device_metrics_tag) {
+    Serial.print("Device Metrics: ");
+    Serial.print(telemetry->variant.device_metrics.voltage);
   }
 }
 

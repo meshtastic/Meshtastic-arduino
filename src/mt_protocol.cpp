@@ -192,9 +192,6 @@ bool handle_config_complete_id(uint32_t now, uint32_t config_complete_id) {
   return true;
 }
 
-                if (mp.which_payload_variant == meshtastic_MeshPacket_decoded_tag && mp.decoded.portnum == ourPortNum) {
-                    
-
 bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   if (meshPacket->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
     if (meshPacket->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
