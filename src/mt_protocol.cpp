@@ -1,4 +1,5 @@
 #include "mt_internals.h"
+#include "meshtastic-pb.h"
 
 // Magic number at the start of all MT packets
 #define MT_MAGIC_0 0x94
@@ -191,14 +192,18 @@ bool handle_config_complete_id(uint32_t now, uint32_t config_complete_id) {
   return true;
 }
 
+                if (mp.which_payload_variant == meshtastic_MeshPacket_decoded_tag && mp.decoded.portnum == ourPortNum) {
+                    
+
 bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   if (meshPacket->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
     if (meshPacket->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
       if (text_message_callback != NULL)
         text_message_callback(meshPacket->from, (const char*)meshPacket->decoded.payload.bytes);
     } else if (meshPacket->decoded.portnum == meshtastic_PortNum_TELEMETRY_APP) {
-      if (telemetry_callback != NULL)
-        telemetry_callback(meshPacket->from, );
+      meshtastic_Telemetry *telemetry = {0};
+      if (telemetry_callback != NULL && pb_decode_from_bytes(meshPacket->decoded.payload.bytes, meshPacket->decoded.payload.bytes, &meshtastic_Telemetry_msg, &telemetry))
+        telemetry_callback(meshPacket->from, telemetry);
     } else {
       // TODO handle other portnums
       return false;
