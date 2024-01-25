@@ -7,7 +7,7 @@ size_t pb_encode_to_bytes(uint8_t *destbuf, size_t destbufsize, const pb_msgdesc
 {
     pb_ostream_t stream = pb_ostream_from_buffer(destbuf, destbufsize);
     if (!pb_encode(&stream, fields, src_struct)) {
-        Serial.println("Panic: can't encode protobuf reason='%s'\n", PB_GET_ERROR(&stream));
+        Serial.println("Panic: can't encode protobuf");
     } else {
         return stream.bytes_written;
     }
@@ -18,7 +18,7 @@ bool pb_decode_from_bytes(const uint8_t *srcbuf, size_t srcbufsize, const pb_msg
 {
     pb_istream_t stream = pb_istream_from_buffer(srcbuf, srcbufsize);
     if (!pb_decode(&stream, fields, dest_struct)) {
-        Serial.println("Can't decode protobuf reason='%s', pb_msgdesc %p\n", PB_GET_ERROR(&stream), fields);
+        Serial.println("Can't decode protobuf reason=");
         return false;
     } else {
         return true;
