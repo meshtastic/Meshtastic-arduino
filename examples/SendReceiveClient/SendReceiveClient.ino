@@ -47,6 +47,18 @@ void text_message_callback(uint32_t from, const char* text) {
   Serial.println(text);
 }
 
+// This callback function will be called whenever the radio receives a text message
+void telemetry_callback(uint32_t from, meshtastic_Telemetry* telemetry) {
+  // Do your own thing here. This example just prints the message to the serial console.
+  Serial.print("Received telemetry from ");
+  Serial.print(from);
+  Serial.print(": ");
+  if (telemetry->variant.device_metrics) {
+    Serial.println("Device Metrics: %fV", telemetry->variant.device_metrics->voltage);
+  }
+}
+
+
 void setup() {
   // Try for up to five seconds to find a serial port; if not, the show must go on
   Serial.begin(9600);
@@ -81,6 +93,9 @@ void setup() {
 
   // Register a callback function to be called whenever a text message is received
   set_text_message_callback(text_message_callback);
+
+  // Register a callback function to be called whenever a telemetry payload is received
+  set_telemetry_callback(telemetry_callback);
 }
 
 void loop() {
