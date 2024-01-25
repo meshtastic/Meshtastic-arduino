@@ -199,7 +199,7 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
         text_message_callback(meshPacket->from, (const char*)meshPacket->decoded.payload.bytes);
     } else if (meshPacket->decoded.portnum == meshtastic_PortNum_TELEMETRY_APP) {
       meshtastic_Telemetry *telemetry = {0};
-      if (telemetry_callback != NULL && pb_decode_from_bytes(meshPacket->decoded.payload.bytes, meshPacket->decoded.payload.bytes, &meshtastic_Telemetry_msg, &telemetry))
+      if (telemetry_callback != NULL && pb_decode_from_bytes(meshPacket->decoded.payload.bytes, meshPacket->decoded.payload.size, &meshtastic_Telemetry_msg, &telemetry))
         telemetry_callback(meshPacket->from, telemetry);
     } else {
       // TODO handle other portnums
