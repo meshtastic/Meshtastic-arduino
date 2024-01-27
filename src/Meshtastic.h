@@ -36,6 +36,10 @@ typedef struct {
   float voltage;
   float channel_utilization;
   float air_util_tx;
+  float temperature;
+  float relative_humidity;
+  float barometric_pressure;
+  float gas_resistance;
 } mt_node_t;
 
 // Initialize, using wifi to connect to the MT radio
