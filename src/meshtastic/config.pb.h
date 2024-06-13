@@ -182,6 +182,25 @@ typedef enum _meshtastic_Config_DisplayConfig_DisplayMode {
     meshtastic_Config_DisplayConfig_DisplayMode_COLOR = 3
 } meshtastic_Config_DisplayConfig_DisplayMode;
 
+typedef enum _meshtastic_Config_DisplayConfig_CompassOrientation {
+    /* The compass and the display are in the same orientation. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_0 = 0,
+    /* Rotate the compass by 90 degrees. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_90 = 1,
+    /* Rotate the compass by 180 degrees. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_180 = 2,
+    /* Rotate the compass by 270 degrees. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_270 = 3,
+    /* Don't rotate the compass, but invert the result. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_0_INVERTED = 4,
+    /* Rotate the compass by 90 degrees and invert. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_90_INVERTED = 5,
+    /* Rotate the compass by 180 degrees and invert. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_180_INVERTED = 6,
+    /* Rotate the compass by 270 degrees and invert. */
+    meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_270_INVERTED = 7
+} meshtastic_Config_DisplayConfig_CompassOrientation;
+
 typedef enum _meshtastic_Config_LoRaConfig_RegionCode {
     /* Region is not set */
     meshtastic_Config_LoRaConfig_RegionCode_UNSET = 0,
@@ -281,6 +300,10 @@ typedef struct _meshtastic_Config_DeviceConfig {
     bool is_managed;
     /* Disables the triple-press of user button to enable or disable GPS */
     bool disable_triple_click;
+    /* POSIX Timezone definition string from https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv. */
+    char tzdef[65];
+    /* If true, disable the default blinking LED (LED_PIN) behavior on the device */
+    bool led_heartbeat_disabled;
 } meshtastic_Config_DeviceConfig;
 
 /* Position Config */
@@ -322,35 +345,30 @@ typedef struct _meshtastic_Config_PositionConfig {
 /* Power Config\
  See [Power Config](/docs/settings/config/power) for additional power config details. */
 typedef struct _meshtastic_Config_PowerConfig {
-    /* If set, we are powered from a low-current source (i.e. solar), so even if it looks like we have power flowing in
- we should try to minimize power consumption as much as possible.
- YOU DO NOT NEED TO SET THIS IF YOU'VE set is_router (it is implied in that case).
- Advanced Option */
+    /* Description: Will sleep everything as much as possible, for the tracker and sensor role this will also include the lora radio. 
+ Don't use this setting if you want to use your device with the phone apps or are using a device without a user button.
+ Technical Details: Works for ESP32 devices and NRF52 devices in the Sensor or Tracker roles */
     bool is_power_saving;
-    /* If non-zero, the device will fully power off this many seconds after external power is removed. */
+    /* Description: If non-zero, the device will fully power off this many seconds after external power is removed. */
     uint32_t on_battery_shutdown_after_secs;
     /* Ratio of voltage divider for battery pin eg. 3.20 (R1=100k, R2=220k)
  Overrides the ADC_MULTIPLIER defined in variant for battery voltage calculation.
- Should be set to floating point value between 2 and 4
- Fixes issues on Heltec v2 */
+ https://meshtastic.org/docs/configuration/radio/power/#adc-multiplier-override
+ Should be set to floating point value between 2 and 6 */
     float adc_multiplier_override;
-    /* Wait Bluetooth Seconds
- The number of seconds for to wait before turning off BLE in No Bluetooth states
- 0 for default of 1 minute */
+    /* Description: The number of seconds for to wait before turning off BLE in No Bluetooth states
+  Technical Details: ESP32 Only 0 for default of 1 minute */
     uint32_t wait_bluetooth_secs;
     /* Super Deep Sleep Seconds
  While in Light Sleep if mesh_sds_timeout_secs is exceeded we will lower into super deep sleep
  for this value (default 1 year) or a button press
  0 for default of one year */
     uint32_t sds_secs;
-    /* Light Sleep Seconds
- In light sleep the CPU is suspended, LoRa radio is on, BLE is off an GPS is on
- ESP32 Only
- 0 for default of 300 */
+    /* Description: In light sleep the CPU is suspended, LoRa radio is on, BLE is off an GPS is on
+ Technical Details: ESP32 Only 0 for default of 300 */
     uint32_t ls_secs;
-    /* Minimum Wake Seconds
- While in light sleep when we receive packets on the LoRa radio we will wake and handle them and stay awake in no BLE mode for this value
- 0 for default of 10 seconds */
+    /* Description: While in light sleep when we receive packets on the LoRa radio we will wake and handle them and stay awake in no BLE mode for this value
+ Technical Details: ESP32 Only 0 for default of 10 seconds */
     uint32_t min_wake_secs;
     /* I2C address of INA_2XX to use for reading device battery voltage */
     uint8_t device_battery_ina_address;
@@ -414,6 +432,8 @@ typedef struct _meshtastic_Config_DisplayConfig {
     bool heading_bold;
     /* Should we wake the screen up on accelerometer detected motion or tap */
     bool wake_on_tap_or_motion;
+    /* Indicates how to rotate or invert the compass output to accurate display on the display. */
+    meshtastic_Config_DisplayConfig_CompassOrientation compass_orientation;
 } meshtastic_Config_DisplayConfig;
 
 /* Lora Config */
@@ -548,6 +568,10 @@ extern "C" {
 #define _meshtastic_Config_DisplayConfig_DisplayMode_MAX meshtastic_Config_DisplayConfig_DisplayMode_COLOR
 #define _meshtastic_Config_DisplayConfig_DisplayMode_ARRAYSIZE ((meshtastic_Config_DisplayConfig_DisplayMode)(meshtastic_Config_DisplayConfig_DisplayMode_COLOR+1))
 
+#define _meshtastic_Config_DisplayConfig_CompassOrientation_MIN meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_0
+#define _meshtastic_Config_DisplayConfig_CompassOrientation_MAX meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_270_INVERTED
+#define _meshtastic_Config_DisplayConfig_CompassOrientation_ARRAYSIZE ((meshtastic_Config_DisplayConfig_CompassOrientation)(meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_270_INVERTED+1))
+
 #define _meshtastic_Config_LoRaConfig_RegionCode_MIN meshtastic_Config_LoRaConfig_RegionCode_UNSET
 #define _meshtastic_Config_LoRaConfig_RegionCode_MAX meshtastic_Config_LoRaConfig_RegionCode_SG_923
 #define _meshtastic_Config_LoRaConfig_RegionCode_ARRAYSIZE ((meshtastic_Config_LoRaConfig_RegionCode)(meshtastic_Config_LoRaConfig_RegionCode_SG_923+1))
@@ -574,6 +598,7 @@ extern "C" {
 #define meshtastic_Config_DisplayConfig_units_ENUMTYPE meshtastic_Config_DisplayConfig_DisplayUnits
 #define meshtastic_Config_DisplayConfig_oled_ENUMTYPE meshtastic_Config_DisplayConfig_OledType
 #define meshtastic_Config_DisplayConfig_displaymode_ENUMTYPE meshtastic_Config_DisplayConfig_DisplayMode
+#define meshtastic_Config_DisplayConfig_compass_orientation_ENUMTYPE meshtastic_Config_DisplayConfig_CompassOrientation
 
 #define meshtastic_Config_LoRaConfig_modem_preset_ENUMTYPE meshtastic_Config_LoRaConfig_ModemPreset
 #define meshtastic_Config_LoRaConfig_region_ENUMTYPE meshtastic_Config_LoRaConfig_RegionCode
@@ -583,21 +608,21 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define meshtastic_Config_init_default           {0, {meshtastic_Config_DeviceConfig_init_default}}
-#define meshtastic_Config_DeviceConfig_init_default {_meshtastic_Config_DeviceConfig_Role_MIN, 0, 0, 0, 0, _meshtastic_Config_DeviceConfig_RebroadcastMode_MIN, 0, 0, 0, 0}
+#define meshtastic_Config_DeviceConfig_init_default {_meshtastic_Config_DeviceConfig_Role_MIN, 0, 0, 0, 0, _meshtastic_Config_DeviceConfig_RebroadcastMode_MIN, 0, 0, 0, 0, "", 0}
 #define meshtastic_Config_PositionConfig_init_default {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, _meshtastic_Config_PositionConfig_GpsMode_MIN}
 #define meshtastic_Config_PowerConfig_init_default {0, 0, 0, 0, 0, 0, 0, 0}
 #define meshtastic_Config_NetworkConfig_init_default {0, "", "", "", 0, _meshtastic_Config_NetworkConfig_AddressMode_MIN, false, meshtastic_Config_NetworkConfig_IpV4Config_init_default, ""}
 #define meshtastic_Config_NetworkConfig_IpV4Config_init_default {0, 0, 0, 0}
-#define meshtastic_Config_DisplayConfig_init_default {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0}
+#define meshtastic_Config_DisplayConfig_init_default {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0, _meshtastic_Config_DisplayConfig_CompassOrientation_MIN}
 #define meshtastic_Config_LoRaConfig_init_default {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}, 0}
 #define meshtastic_Config_BluetoothConfig_init_default {0, _meshtastic_Config_BluetoothConfig_PairingMode_MIN, 0}
 #define meshtastic_Config_init_zero              {0, {meshtastic_Config_DeviceConfig_init_zero}}
-#define meshtastic_Config_DeviceConfig_init_zero {_meshtastic_Config_DeviceConfig_Role_MIN, 0, 0, 0, 0, _meshtastic_Config_DeviceConfig_RebroadcastMode_MIN, 0, 0, 0, 0}
+#define meshtastic_Config_DeviceConfig_init_zero {_meshtastic_Config_DeviceConfig_Role_MIN, 0, 0, 0, 0, _meshtastic_Config_DeviceConfig_RebroadcastMode_MIN, 0, 0, 0, 0, "", 0}
 #define meshtastic_Config_PositionConfig_init_zero {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, _meshtastic_Config_PositionConfig_GpsMode_MIN}
 #define meshtastic_Config_PowerConfig_init_zero  {0, 0, 0, 0, 0, 0, 0, 0}
 #define meshtastic_Config_NetworkConfig_init_zero {0, "", "", "", 0, _meshtastic_Config_NetworkConfig_AddressMode_MIN, false, meshtastic_Config_NetworkConfig_IpV4Config_init_zero, ""}
 #define meshtastic_Config_NetworkConfig_IpV4Config_init_zero {0, 0, 0, 0}
-#define meshtastic_Config_DisplayConfig_init_zero {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0}
+#define meshtastic_Config_DisplayConfig_init_zero {0, _meshtastic_Config_DisplayConfig_GpsCoordinateFormat_MIN, 0, 0, 0, _meshtastic_Config_DisplayConfig_DisplayUnits_MIN, _meshtastic_Config_DisplayConfig_OledType_MIN, _meshtastic_Config_DisplayConfig_DisplayMode_MIN, 0, 0, _meshtastic_Config_DisplayConfig_CompassOrientation_MIN}
 #define meshtastic_Config_LoRaConfig_init_zero   {0, _meshtastic_Config_LoRaConfig_ModemPreset_MIN, 0, 0, 0, 0, _meshtastic_Config_LoRaConfig_RegionCode_MIN, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}, 0}
 #define meshtastic_Config_BluetoothConfig_init_zero {0, _meshtastic_Config_BluetoothConfig_PairingMode_MIN, 0}
 
@@ -612,6 +637,8 @@ extern "C" {
 #define meshtastic_Config_DeviceConfig_double_tap_as_button_press_tag 8
 #define meshtastic_Config_DeviceConfig_is_managed_tag 9
 #define meshtastic_Config_DeviceConfig_disable_triple_click_tag 10
+#define meshtastic_Config_DeviceConfig_tzdef_tag 11
+#define meshtastic_Config_DeviceConfig_led_heartbeat_disabled_tag 12
 #define meshtastic_Config_PositionConfig_position_broadcast_secs_tag 1
 #define meshtastic_Config_PositionConfig_position_broadcast_smart_enabled_tag 2
 #define meshtastic_Config_PositionConfig_fixed_position_tag 3
@@ -655,6 +682,7 @@ extern "C" {
 #define meshtastic_Config_DisplayConfig_displaymode_tag 8
 #define meshtastic_Config_DisplayConfig_heading_bold_tag 9
 #define meshtastic_Config_DisplayConfig_wake_on_tap_or_motion_tag 10
+#define meshtastic_Config_DisplayConfig_compass_orientation_tag 11
 #define meshtastic_Config_LoRaConfig_use_preset_tag 1
 #define meshtastic_Config_LoRaConfig_modem_preset_tag 2
 #define meshtastic_Config_LoRaConfig_bandwidth_tag 3
@@ -711,7 +739,9 @@ X(a, STATIC,   SINGULAR, UENUM,    rebroadcast_mode,   6) \
 X(a, STATIC,   SINGULAR, UINT32,   node_info_broadcast_secs,   7) \
 X(a, STATIC,   SINGULAR, BOOL,     double_tap_as_button_press,   8) \
 X(a, STATIC,   SINGULAR, BOOL,     is_managed,        9) \
-X(a, STATIC,   SINGULAR, BOOL,     disable_triple_click,  10)
+X(a, STATIC,   SINGULAR, BOOL,     disable_triple_click,  10) \
+X(a, STATIC,   SINGULAR, STRING,   tzdef,            11) \
+X(a, STATIC,   SINGULAR, BOOL,     led_heartbeat_disabled,  12)
 #define meshtastic_Config_DeviceConfig_CALLBACK NULL
 #define meshtastic_Config_DeviceConfig_DEFAULT NULL
 
@@ -775,7 +805,8 @@ X(a, STATIC,   SINGULAR, UENUM,    units,             6) \
 X(a, STATIC,   SINGULAR, UENUM,    oled,              7) \
 X(a, STATIC,   SINGULAR, UENUM,    displaymode,       8) \
 X(a, STATIC,   SINGULAR, BOOL,     heading_bold,      9) \
-X(a, STATIC,   SINGULAR, BOOL,     wake_on_tap_or_motion,  10)
+X(a, STATIC,   SINGULAR, BOOL,     wake_on_tap_or_motion,  10) \
+X(a, STATIC,   SINGULAR, UENUM,    compass_orientation,  11)
 #define meshtastic_Config_DisplayConfig_CALLBACK NULL
 #define meshtastic_Config_DisplayConfig_DEFAULT NULL
 
@@ -829,8 +860,8 @@ extern const pb_msgdesc_t meshtastic_Config_BluetoothConfig_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define meshtastic_Config_BluetoothConfig_size   10
-#define meshtastic_Config_DeviceConfig_size      32
-#define meshtastic_Config_DisplayConfig_size     28
+#define meshtastic_Config_DeviceConfig_size      100
+#define meshtastic_Config_DisplayConfig_size     30
 #define meshtastic_Config_LoRaConfig_size        80
 #define meshtastic_Config_NetworkConfig_IpV4Config_size 20
 #define meshtastic_Config_NetworkConfig_size     196
