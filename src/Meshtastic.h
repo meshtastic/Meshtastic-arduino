@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 #include "meshtastic/mesh.pb.h"
-#include <pb_encode.h>
-#include <pb_decode.h>
+#include "pb_encode.h"
+#include "pb_decode.h"
 
 // Some sane limits on a few strings that the protocol would otherwise allow to be unlimited length
 #define MAX_USER_ID_LEN (sizeof(meshtastic_User().id) - 1)

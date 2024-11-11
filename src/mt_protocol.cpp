@@ -228,8 +228,16 @@ bool handle_packet(uint32_t now, size_t payload_len) {
       return handle_mesh_packet(&fromRadio.packet);
     default:
       if (mt_debugging) {
-        Serial.print("Got a payloadVariant we don't recognize: ");
-        Serial.println(fromRadio.which_payload_variant);
+        // Rate limit
+        // Serial input buffer overflows during initial connection, while we're slowly printing these at 9600 baud
+        constexpr uint32_t limitMs = 100; 
+        static uint32_t lastLog = 0;
+        uint32_t now = millis();
+        if (now - lastLog > limitMs) {
+            lastLog = now;
+            Serial.print("Got a payloadVariant we don't recognize: ");
+            Serial.println(fromRadio.which_payload_variant);
+        }
       }
       return false;
   }
