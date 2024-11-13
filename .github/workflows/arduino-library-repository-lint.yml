@@ -1,4 +1,4 @@
-v4name: Check compliance with Arduino Repository rules
+name: Check compliance with Arduino Repository rules
 
 on:
   push:
