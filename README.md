@@ -5,3 +5,8 @@ Driver for interfacing with Meshtastic nodes over WiFi and Serial connections.
 Note: This is **not** the [Meshtastic firmware](https://github.com/meshtastic/firmware) for use on a supported device with LoRa chip.
 
 Author: Mike Schiraldi
+
+Usage:
+
+* add the nanopb library to your development environment
+* add ESPSoftwareSerial, if you use the esp32 toolchain
