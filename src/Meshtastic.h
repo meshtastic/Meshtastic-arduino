@@ -75,7 +75,7 @@ bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t));
 // Set the callback function that gets called when the node receives a text message.
 void set_text_message_callback(void (*callback)(uint32_t from, const char * text));
 
-// Set the callback function that gets called when the node receives a text message.
+// Set the callback function that gets called when the node receives a text message. Includes the 'to' parameter to catch DM's vs Broadcast.
 void set_directed_text_message_callback(void (*callback)(uint32_t from, uint32_t to, const char * text));
 
 // Send a text message with *text* as payload, to a destination node (optional), on a certain channel (optional).
