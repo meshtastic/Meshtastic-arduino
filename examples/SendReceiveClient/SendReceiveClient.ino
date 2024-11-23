@@ -22,6 +22,7 @@
 // will ignore these settings and use their own.
 #define SERIAL_RX_PIN 13
 #define SERIAL_TX_PIN 15
+
 // A different baud rate to communicate with the Meshtastic device can be specified here
 #define BAUD_RATE 9600
 
@@ -39,12 +40,17 @@ void connected_callback(mt_node_t *node, mt_nr_progress_t progress) {
 }
 
 // This callback function will be called whenever the radio receives a text message
-void text_message_callback(uint32_t from, const char* text) {
+void text_message_callback(uint32_t from, uint32_t to, const char* text) {
   // Do your own thing here. This example just prints the message to the serial console.
-  Serial.print("Received a text message from ");
+  Serial.print("Received a text message from: ");
   Serial.print(from);
-  Serial.print(": ");
+  Serial.print(" to: ");
+  Serial.print(to);
+  Serial.print(" message: ");
   Serial.println(text);
+  if (to == my_node_num){
+    Serial.println("This is a DM to me!");
+  }
 }
 
 void setup() {
@@ -80,7 +86,7 @@ void setup() {
   mt_request_node_report(connected_callback);
 
   // Register a callback function to be called whenever a text message is received
-  set_text_message_callback(text_message_callback);
+  set_directed_text_message_callback(text_message_callback);
 }
 
 void loop() {
