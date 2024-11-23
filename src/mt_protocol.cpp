@@ -24,7 +24,7 @@ uint32_t my_node_num = 0;
 
 bool mt_debugging = false;
 void (*text_message_callback)(uint32_t from, const char* text) = NULL;
-void (*adv_text_message_callback)(uint32_t from, uint32_t to, const char* text) = NULL;
+void (*directed_text_message_callback)(uint32_t from, uint32_t to, const char* text) = NULL;
 void (*node_report_callback)(mt_node_t *, mt_nr_progress_t) = NULL;
 mt_node_t node;
 
@@ -121,8 +121,8 @@ void set_text_message_callback(void (*callback)(uint32_t from, const char* text)
   text_message_callback = callback;
 }
 
-void set_adv_text_message_callback(void (*callback)(uint32_t from, uint32_t to, const char* text)) {
-  adv_text_message_callback = callback;
+void set_directed_text_message_callback(void (*callback)(uint32_t from, uint32_t to, const char* text)) {
+  directed_text_message_callback = callback;
 }
 
 bool handle_my_info(meshtastic_MyNodeInfo *myNodeInfo) {
@@ -196,8 +196,8 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
     if (meshPacket->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
       if (text_message_callback != NULL)
         text_message_callback(meshPacket->from, (const char*)meshPacket->decoded.payload.bytes);
-      if (adv_text_message_callback != NULL)
-        adv_text_message_callback(meshPacket->from, meshPacket->to, (const char*)meshPacket->decoded.payload.bytes);
+      if (directed_text_message_callback != NULL)
+        directed_text_message_callback(meshPacket->from, meshPacket->to, (const char*)meshPacket->decoded.payload.bytes);
     } else {
       // TODO handle other portnums
       return false;
