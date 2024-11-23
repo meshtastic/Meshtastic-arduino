@@ -22,7 +22,6 @@
 // will ignore these settings and use their own.
 #define SERIAL_RX_PIN 13
 #define SERIAL_TX_PIN 15
-
 // A different baud rate to communicate with the Meshtastic device can be specified here
 #define BAUD_RATE 9600
 
