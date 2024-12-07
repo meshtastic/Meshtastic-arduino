@@ -47,8 +47,12 @@ void text_message_callback(uint32_t from, uint32_t to, const char* text) {
   Serial.print(to);
   Serial.print(" message: ");
   Serial.println(text);
-  if (to == my_node_num){
+  if (to == 0xFFFFFFFF){
+    Serial.println("This is a BROADCAST message.");
+  } else if (to == my_node_num){
     Serial.println("This is a DM to me!");
+  } else {
+    Serial.println("This is a DM to someone else.");
   }
 }
 
@@ -85,7 +89,7 @@ void setup() {
   mt_request_node_report(connected_callback);
 
   // Register a callback function to be called whenever a text message is received
-  set_directed_text_message_callback(text_message_callback);
+  set_text_message_callback(text_message_callback);
 }
 
 void loop() {
