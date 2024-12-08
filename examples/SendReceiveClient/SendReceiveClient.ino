@@ -39,9 +39,11 @@ void connected_callback(mt_node_t *node, mt_nr_progress_t progress) {
 }
 
 // This callback function will be called whenever the radio receives a text message
-void text_message_callback(uint32_t from, uint32_t to, const char* text) {
+void text_message_callback(uint32_t from, uint32_t to,  uint8_t channel, const char* text) {
   // Do your own thing here. This example just prints the message to the serial console.
-  Serial.print("Received a text message from: ");
+  Serial.print("Received a text message on channel: ");
+  Serial.print(channel);
+  Serial.print(" from: ");
   Serial.print(from);
   Serial.print(" to: ");
   Serial.print(to);
