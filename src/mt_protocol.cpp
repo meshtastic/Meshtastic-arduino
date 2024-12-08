@@ -23,7 +23,7 @@ uint32_t want_config_id = 0;
 uint32_t my_node_num = 0;
 
 bool mt_debugging = false;
-void (*text_message_callback)(uint32_t from, const char* text) = NULL;
+void (*text_message_callback)(uint32_t from, uint32_t to, const char* text) = NULL;
 void (*node_report_callback)(mt_node_t *, mt_nr_progress_t) = NULL;
 mt_node_t node;
 
@@ -116,7 +116,7 @@ bool mt_send_text(const char * text, uint32_t dest, uint8_t channel_index) {
   return _mt_send_toRadio(toRadio);
 }
 
-void set_text_message_callback(void (*callback)(uint32_t from, const char* text)) {
+void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to, const char* text)) {
   text_message_callback = callback;
 }
 
@@ -190,7 +190,7 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   if (meshPacket->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
     if (meshPacket->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
       if (text_message_callback != NULL)
-        text_message_callback(meshPacket->from, (const char*)meshPacket->decoded.payload.bytes);
+        text_message_callback(meshPacket->from, meshPacket->to, (const char*)meshPacket->decoded.payload.bytes);
     } else {
       // TODO handle other portnums
       return false;
