@@ -73,7 +73,7 @@ typedef enum {
 bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t));
 
 // Set the callback function that gets called when the node receives a text message.
-void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to, const char * text));
+void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to, uint8_t channel, const char * text));
 
 // Send a text message with *text* as payload, to a destination node (optional), on a certain channel (optional).
 bool mt_send_text(const char * text, uint32_t dest = BROADCAST_ADDR, uint8_t channel_index = 0);
