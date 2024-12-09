@@ -201,7 +201,7 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   return true;
 }
 
-// Parse a packet that came in, and handle it. Return true iff we were able to parse it.
+// Parse a packet that came in, and handle it. Return true if we were able to parse it.
 bool handle_packet(uint32_t now, size_t payload_len) {
   meshtastic_FromRadio fromRadio = meshtastic_FromRadio_init_zero;
 
@@ -211,6 +211,12 @@ bool handle_packet(uint32_t now, size_t payload_len) {
   bool status = pb_decode(&stream, meshtastic_FromRadio_fields, &fromRadio);
   memmove(pb_buf, pb_buf+4+payload_len, PB_BUFSIZE-4-payload_len);
   pb_size -= 4 + payload_len;
+
+  // Be prepared to request a node report to re-establish flow after an MT reboot
+  meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
+  toRadio.which_payload_variant = meshtastic_ToRadio_want_config_id_tag;
+  want_config_id = random(0x7FffFFff);  // random() can't handle anything bigger
+  toRadio.want_config_id = want_config_id;
 
   if (!status) {
     d("Decoding failed");
@@ -226,6 +232,8 @@ bool handle_packet(uint32_t now, size_t payload_len) {
       return handle_config_complete_id(now, fromRadio.config_complete_id);
     case meshtastic_FromRadio_packet_tag:
       return handle_mesh_packet(&fromRadio.packet);
+    case meshtastic_FromRadio_rebooted_tag:
+      _mt_send_toRadio(toRadio);
     default:
       if (mt_debugging) {
         // Rate limit
@@ -254,6 +262,8 @@ void mt_protocol_check_packet(uint32_t now) {
 
   if (pb_buf[0] != MT_MAGIC_0 || pb_buf[1] != MT_MAGIC_1) {
     d("Got bad magic");
+    memset(pb_buf, 0, PB_BUFSIZE);
+    pb_size = 0;
     return;
   }
 
