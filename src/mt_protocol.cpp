@@ -16,6 +16,13 @@ size_t pb_size = 0; // Number of bytes currently in the buffer
 // Wait this many msec if there's nothing new on the channel
 #define NO_NEWS_PAUSE 25
 
+// Serial connections require at least one ping every 15 minutes
+// Otherwise the connection is closed, and packets will no longer be received
+// We will send a ping every 60 seconds, which is what the web client does
+// https://github.com/meshtastic/js/blob/715e35d2374276a43ffa93c628e3710875d43907/src/adapters/serialConnection.ts#L160
+#define HEARTBEAT_INTERVAL_MS 60000
+uint32_t last_heartbeat_at = 0;
+
 // The ID of the current WANT_CONFIG request
 uint32_t want_config_id = 0;
 
@@ -114,6 +121,18 @@ bool mt_send_text(const char * text, uint32_t dest, uint8_t channel_index) {
   Serial.print("' to ");
   Serial.println(dest);
   return _mt_send_toRadio(toRadio);
+}
+
+bool mt_send_heartbeat() {
+
+  d("Sending heartbeat");
+
+  meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
+  toRadio.which_payload_variant = meshtastic_ToRadio_heartbeat_tag;
+  toRadio.heartbeat = meshtastic_Heartbeat_init_default;
+
+  return _mt_send_toRadio(toRadio);
+
 }
 
 void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text)) {
@@ -298,8 +317,16 @@ bool mt_loop(uint32_t now) {
     return false;
 #endif
   } else if (mt_serial_mode) {
+
     rv = mt_serial_loop();
     if (rv) bytes_read = mt_serial_check_radio((char *)pb_buf + pb_size, space_left);
+
+    // if heartbeat interval has passed, send a heartbeat to keep serial connection alive
+    if(now >= (last_heartbeat_at + HEARTBEAT_INTERVAL_MS)){
+        mt_send_heartbeat();
+        last_heartbeat_at = now;
+    }
+
   } else {
     Serial.println("mt_loop() called but it was never initialized");
     while(1);
