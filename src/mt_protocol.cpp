@@ -13,6 +13,9 @@
 pb_byte_t pb_buf[PB_BUFSIZE+4];
 size_t pb_size = 0; // Number of bytes currently in the buffer
 
+// Nonce to request only my nodeinfo and skip other nodes in the db
+#define SPECIAL_NONCE 69420
+
 // Wait this many msec if there's nothing new on the channel
 #define NO_NEWS_PAUSE 25
 
@@ -234,8 +237,7 @@ bool handle_packet(uint32_t now, size_t payload_len) {
   // Be prepared to request a node report to re-establish flow after an MT reboot
   meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
   toRadio.which_payload_variant = meshtastic_ToRadio_want_config_id_tag;
-  want_config_id = random(0x7FffFFff);  // random() can't handle anything bigger
-  toRadio.want_config_id = want_config_id;
+  toRadio.want_config_id = SPECIAL_NONCE;
 
   if (!status) {
     d("Decoding failed");
