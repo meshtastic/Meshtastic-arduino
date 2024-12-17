@@ -10,6 +10,7 @@
 #define MAX_USER_ID_LEN (sizeof(meshtastic_User().id) - 1)
 #define MAX_LONG_NAME_LEN (sizeof(meshtastic_User().long_name) - 1)
 #define MAX_SHORT_NAME_LEN (sizeof(meshtastic_User().short_name) - 1)
+#define MAX_ACCOUNT_NAME (sizeof(meshtastic_Channel().settings.name) - 1)
 
 #define BAUD_DEFAULT 9600
 #define BROADCAST_ADDR 0xFFFFFFFF
@@ -36,7 +37,20 @@ typedef struct {
   float voltage;
   float channel_utilization;
   float air_util_tx;
+  bool is_favorite;
 } mt_node_t;
+
+typedef enum mt_channel_role {
+    DISABLED = 0,    
+    PRIMARY = 1,
+    SECONDARY = 2
+} mt_channel_role;
+
+typedef struct {
+  int8_t index;
+  char name[MAX_ACCOUNT_NAME];
+  mt_channel_role role;
+} mt_channel_t;
 
 // Initialize, using wifi to connect to the MT radio
 void mt_wifi_init(int8_t cs_pin, int8_t irq_pin, int8_t reset_pin,
@@ -70,7 +84,7 @@ typedef enum {
 //
 // Returns true if we were able to request the report, false if we couldn't
 // even do that.
-bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t));
+bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t), void (*callbackChannels)(mt_channel_t *, mt_nr_progress_t) = NULL);
 
 // Set the callback function that gets called when the node receives a text message.
 void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to, uint8_t channel, const char * text));
