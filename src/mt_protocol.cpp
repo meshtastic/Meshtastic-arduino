@@ -125,6 +125,13 @@ bool mt_send_text(const char * text, uint32_t dest, uint8_t channel_index) {
   toRadio.which_payload_variant = meshtastic_ToRadio_packet_tag;
   toRadio.packet = meshPacket;
   
+  if (mt_debugging) {
+    Serial.print("Sending text message '");
+    Serial.print(text);
+    Serial.print("' to ");
+    Serial.println(dest);
+  }
+
   return _mt_send_toRadio(toRadio);
 }
 

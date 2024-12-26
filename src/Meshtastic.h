@@ -41,9 +41,9 @@ typedef struct {
 } mt_node_t;
 
 typedef enum mt_channel_role {
-    DISABLED = 0,    
-    PRIMARY = 1,
-    SECONDARY = 2
+    CR_DISABLED = 0,    
+    CR_PRIMARY = 1,
+    CR_SECONDARY = 2
 } mt_channel_role;
 
 typedef struct {
