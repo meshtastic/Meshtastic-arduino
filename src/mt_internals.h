@@ -1,11 +1,6 @@
 #ifndef MT_INTERNALS_H
 #define MT_INTERNALS_H
 
-// As per original code: to support Adafruit Feather M0 WiFi
-#ifdef ARDUINO_ARCH_SAMD
-#define MT_WIFI_SUPPORTED
-#endif
-
 #include "Meshtastic.h"
 
 extern bool mt_debugging;
