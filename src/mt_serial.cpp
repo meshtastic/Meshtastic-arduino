@@ -15,7 +15,7 @@ void mt_serial_init(int8_t rx_pin, int8_t tx_pin, uint32_t baud) {
 
 // Platform specific: init serial
 #if defined(ARDUINO_ARCH_SAMD)
-  // No call to begin(), as per original code
+  serial->begin(baud);
 #elif defined(ARDUINO_ARCH_ESP32)
   serial->begin(baud, SERIAL_8N1, rx_pin, tx_pin);
 #else
