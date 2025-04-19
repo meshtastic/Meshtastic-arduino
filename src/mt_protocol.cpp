@@ -32,10 +32,13 @@ uint32_t want_config_id = 0;
 // Node number of the MT node hosting our WiFi
 uint32_t my_node_num = 0;
 
+
 bool mt_debugging = false;
 void (*text_message_callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text) = NULL;
 void (*node_report_callback)(mt_node_t *, mt_nr_progress_t) = NULL;
+void (*channel_callback)(mt_channel_t *, mt_nr_progress_t) = NULL;
 mt_node_t node;
+mt_channel_t channel;
 
 bool mt_wifi_mode = false;
 bool mt_serial_mode = false;
@@ -87,7 +90,7 @@ bool _mt_send_toRadio(meshtastic_ToRadio toRadio) {
 }
 
 // Request a node report from our MT
-bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t)) {
+bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t), void (*callbackChannels)(mt_channel_t *, mt_nr_progress_t)) {
   meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
   toRadio.which_payload_variant = meshtastic_ToRadio_want_config_id_tag;
   want_config_id = random(0x7FffFFff);  // random() can't handle anything bigger
@@ -100,7 +103,10 @@ bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t)) {
 
   bool rv = _mt_send_toRadio(toRadio);
 
-  if (rv) node_report_callback = callback;
+  if (rv) {
+    node_report_callback = callback;
+    channel_callback = callbackChannels;
+  }
   return rv;
 }
 
@@ -119,10 +125,13 @@ bool mt_send_text(const char * text, uint32_t dest, uint8_t channel_index) {
   toRadio.which_payload_variant = meshtastic_ToRadio_packet_tag;
   toRadio.packet = meshPacket;
   
-  Serial.print("Sending text message '");
-  Serial.print(text);
-  Serial.print("' to ");
-  Serial.println(dest);
+  if (mt_debugging) {
+    Serial.print("Sending text message '");
+    Serial.print(text);
+    Serial.print("' to ");
+    Serial.println(dest);
+  }
+
   return _mt_send_toRadio(toRadio);
 }
 
@@ -144,6 +153,22 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
 
 bool handle_my_info(meshtastic_MyNodeInfo *myNodeInfo) {
   my_node_num = myNodeInfo->my_node_num;
+  return true;
+}
+
+bool handle_channels(meshtastic_Channel *tChannel) {
+  if (channel_callback == NULL) {
+    d("Got a channel, but we don't have a callback");
+    return false;
+  }
+  if (tChannel->has_settings) {
+    memcpy(channel.name, tChannel->settings.name, MAX_ACCOUNT_NAME);
+  }
+  
+  channel.index = tChannel->index;
+  channel.role = static_cast<mt_channel_role>(tChannel->role);
+  
+  channel_callback(&channel, MT_NR_IN_PROGRESS);
   return true;
 }
 
@@ -189,6 +214,7 @@ bool handle_node_info(meshtastic_NodeInfo *nodeInfo) {
     node.channel_utilization = NAN; 
     node.air_util_tx = NAN;
   }
+  node.is_favorite = nodeInfo->is_favorite;
 
   node_report_callback(&node, MT_NR_IN_PROGRESS);
   return true;
@@ -202,8 +228,16 @@ bool handle_config_complete_id(uint32_t now, uint32_t config_complete_id) {
     want_config_id = 0;
     node_report_callback(NULL, MT_NR_DONE);
     node_report_callback = NULL;
+    
+    if (channel_callback != NULL) {
+      channel_callback(NULL, MT_NR_DONE);    
+    }
+    channel_callback = NULL;
   } else {
     node_report_callback(NULL, MT_NR_INVALID);  // but return true, since it was still a valid packet
+    if (channel_callback != NULL) {
+      channel_callback(NULL, MT_NR_INVALID);
+    }
   }
   return true;
 }
@@ -245,6 +279,9 @@ bool handle_packet(uint32_t now, size_t payload_len) {
   }
 
   switch (fromRadio.which_payload_variant) {
+    
+    case meshtastic_FromRadio_channel_tag:
+      return handle_channels(&fromRadio.channel);
     case meshtastic_FromRadio_my_info_tag:
       return handle_my_info(&fromRadio.my_info);
     case meshtastic_FromRadio_node_info_tag:
