@@ -142,6 +142,56 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
   text_message_callback = callback;
 }
 
+bool handle_id_tag(uint32_t id) {
+  Serial.printf("Handle_id_tag: %d\n", id);
+  return true;
+}
+
+bool handle_config_tag(meshtastic_Config *config) {
+  Serial.printf("Handle_config_tag: Payload Variant: %d\n", config->which_payload_variant);
+  return true;
+}
+
+bool handle_channel_tag(meshtastic_Channel *channel) {
+  Serial.printf("Handle_channel_tag %d\n", channel->index);
+  return true;
+}
+
+bool handle_FromRadio_log_record_tag(meshtastic_LogRecord *record) {
+  Serial.printf("Handle_FromRadio_log_record_tag %s\n", record->message);
+  return true;
+}
+
+bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){ 
+  Serial.printf("Handle_moduleConfig_tag PayloadVariant: %d\n", module->which_payload_variant);
+  return true;
+}
+
+bool handle_queueStatus_tag(meshtastic_QueueStatus *qstatus) {
+  Serial.printf("Handle_queueStatus_tag maxlen: %d\n", qstatus->maxlen);
+  return true;
+}
+
+bool handle_xmodemPacket_tag(meshtastic_XModem *packet) {
+  Serial.printf("Handle_xmodem_tag XModem Sequence # %d\n", packet->seq);
+  return true;
+}
+
+bool handle_metatag_data(meshtastic_DeviceMetadata *meta) {
+  Serial.printf("Handle_metatag_data FW Version: %s\n", meta->firmware_version);
+  return true;
+}
+
+bool handle_mqttClientProxyMessage_tag(meshtastic_MqttClientProxyMessage *mqtt) {
+  Serial.printf("Handle_mqttClientProxyMessage_tag Topic: %s\n", mqtt->topic);
+  return true;
+}
+
+bool handle_fileInfo_tag(meshtastic_FileInfo *fInfo) {
+  Serial.printf("Handle_fileInfo_tag FileName: %s\n", fInfo->file_name);
+  return true;
+}
+
 bool handle_my_info(meshtastic_MyNodeInfo *myNodeInfo) {
   my_node_num = myNodeInfo->my_node_num;
   return true;
@@ -245,16 +295,38 @@ bool handle_packet(uint32_t now, size_t payload_len) {
   }
 
   switch (fromRadio.which_payload_variant) {
-    case meshtastic_FromRadio_my_info_tag:
-      return handle_my_info(&fromRadio.my_info);
-    case meshtastic_FromRadio_node_info_tag:
-      return handle_node_info(&fromRadio.node_info);
-    case meshtastic_FromRadio_config_complete_id_tag:
-      return handle_config_complete_id(now, fromRadio.config_complete_id);
-    case meshtastic_FromRadio_packet_tag:
+    case meshtastic_FromRadio_id_tag: // 1
+      return handle_id_tag(fromRadio.id);
+    case meshtastic_FromRadio_packet_tag: //2
       return handle_mesh_packet(&fromRadio.packet);
-    case meshtastic_FromRadio_rebooted_tag:
+    case meshtastic_FromRadio_my_info_tag: // 3
+      return handle_my_info(&fromRadio.my_info);
+    case meshtastic_FromRadio_node_info_tag: // 4
+      return handle_node_info(&fromRadio.node_info);
+    case meshtastic_FromRadio_config_tag : // 5
+      return handle_config_tag(&fromRadio.config);
+    case meshtastic_FromRadio_log_record_tag: // 6
+      return handle_FromRadio_log_record_tag(&fromRadio.log_record);
+    case meshtastic_FromRadio_config_complete_id_tag: // 7
+      return handle_config_complete_id(now, fromRadio.config_complete_id);
+    case meshtastic_FromRadio_rebooted_tag: // 8
       _mt_send_toRadio(toRadio);
+
+    case  meshtastic_FromRadio_moduleConfig_tag: // 9
+      return handle_moduleConfig_tag(&fromRadio.moduleConfig);
+    case meshtastic_FromRadio_channel_tag: // 10
+      return handle_channel_tag(&fromRadio.channel);
+    case meshtastic_FromRadio_queueStatus_tag: // 11
+      return handle_queueStatus_tag(&fromRadio.queueStatus); 
+    case  meshtastic_FromRadio_xmodemPacket_tag: // 12
+      return handle_xmodemPacket_tag(&fromRadio.xmodemPacket);
+    case meshtastic_FromRadio_metadata_tag: //        13
+      return handle_metatag_data(&fromRadio.metadata);
+    case meshtastic_FromRadio_mqttClientProxyMessage_tag: // 14
+      return handle_mqttClientProxyMessage_tag(&fromRadio.mqttClientProxyMessage);
+    case meshtastic_FromRadio_fileInfo_tag :  // 15
+      return handle_fileInfo_tag(&fromRadio.fileInfo); 
+
     default:
       if (mt_debugging) {
         // Rate limit
