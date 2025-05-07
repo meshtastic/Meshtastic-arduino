@@ -143,52 +143,52 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
 }
 
 bool handle_id_tag(uint32_t id) {
-  Serial.printf("Handle_id_tag: %d\n", id);
+  Serial.printf("Handle_id_tag: %d\r\n", id);
   return true;
 }
 
 bool handle_config_tag(meshtastic_Config *config) {
-  Serial.printf("Handle_config_tag: Payload Variant: %d\n", config->which_payload_variant);
+  Serial.printf("Handle_config_tag: Payload Variant: %d\r\n", config->which_payload_variant);
   return true;
 }
 
 bool handle_channel_tag(meshtastic_Channel *channel) {
-  Serial.printf("Handle_channel_tag %d\n", channel->index);
+  Serial.printf("Handle_channel_tag %d\r\n", channel->index);
   return true;
 }
 
 bool handle_FromRadio_log_record_tag(meshtastic_LogRecord *record) {
-  Serial.printf("Handle_FromRadio_log_record_tag %s\n", record->message);
+  Serial.printf("Handle_FromRadio_log_record_tag %s\r\n", record->message);
   return true;
 }
 
 bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){ 
-  Serial.printf("Handle_moduleConfig_tag PayloadVariant: %d\n", module->which_payload_variant);
+  Serial.printf("Handle_moduleConfig_tag PayloadVariant: %d\r\n", module->which_payload_variant);
   return true;
 }
 
 bool handle_queueStatus_tag(meshtastic_QueueStatus *qstatus) {
-  Serial.printf("Handle_queueStatus_tag maxlen: %d\n", qstatus->maxlen);
+  Serial.printf("Handle_queueStatus_tag maxlen: %d\r\n", qstatus->maxlen);
   return true;
 }
 
 bool handle_xmodemPacket_tag(meshtastic_XModem *packet) {
-  Serial.printf("Handle_xmodem_tag XModem Sequence # %d\n", packet->seq);
+  Serial.printf("Handle_xmodem_tag XModem Sequence # %d\r\n", packet->seq);
   return true;
 }
 
 bool handle_metatag_data(meshtastic_DeviceMetadata *meta) {
-  Serial.printf("Handle_metatag_data FW Version: %s\n", meta->firmware_version);
+  Serial.printf("Handle_metatag_data FW Version: %s\r\n", meta->firmware_version);
   return true;
 }
 
 bool handle_mqttClientProxyMessage_tag(meshtastic_MqttClientProxyMessage *mqtt) {
-  Serial.printf("Handle_mqttClientProxyMessage_tag Topic: %s\n", mqtt->topic);
+  Serial.printf("Handle_mqttClientProxyMessage_tag Topic: %s\r\n", mqtt->topic);
   return true;
 }
 
 bool handle_fileInfo_tag(meshtastic_FileInfo *fInfo) {
-  Serial.printf("Handle_fileInfo_tag FileName: %s\n", fInfo->file_name);
+  Serial.printf("Handle_fileInfo_tag FileName: %s\r\n", fInfo->file_name);
   return true;
 }
 
