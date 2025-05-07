@@ -143,12 +143,116 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
 }
 
 bool handle_id_tag(uint32_t id) {
-  Serial.printf("Handle_id_tag: %d\r\n", id);
+  Serial.printf("Handle_id_tag: ID: %d\r\n", id);
   return true;
 }
 
 bool handle_config_tag(meshtastic_Config *config) {
-  Serial.printf("Handle_config_tag: Payload Variant: %d\r\n", config->which_payload_variant);
+  switch (config->which_payload_variant) {
+    case meshtastic_Config_device_tag:
+      Serial.printf("Config:device_tag:  role: %d\r\n", config->payload_variant.device.role);
+      Serial.printf("Config:device_tag:  serial enabled: %d\r\n", config->payload_variant.device.serial_enabled);
+      Serial.printf("Config:device_tag:  button gpio: %d\r\n", config->payload_variant.device.button_gpio);
+      Serial.printf("Config:device_tag:  buzzer gpio: %d\r\n", config->payload_variant.device.buzzer_gpio);
+      Serial.printf("Config:device_tag:  rebroadcast mode: %d\r\n", config->payload_variant.device.rebroadcast_mode);
+      Serial.printf("Config:device_tag:  node_info_broadcast_secs: %d\r\n", config->payload_variant.device.node_info_broadcast_secs);
+      Serial.printf("Config:device_tag:  double-tap-as-button-press: %d\r\n", config->payload_variant.device.double_tap_as_button_press);
+      Serial.printf("Config:device_tag:  is_managed: %d\r\n", config->payload_variant.device.is_managed);
+      Serial.printf("Config:device_tag:  disable_triple_click: %d\r\n", config->payload_variant.device.disable_triple_click);
+      Serial.printf("Config:device_tag:  tz_def: %s\r\n", config->payload_variant.device.tzdef);
+      Serial.printf("Config:device_tag:  led_heartbeat_disabled: %d\r\n", config->payload_variant.device.led_heartbeat_disabled);
+      break;
+
+    case meshtastic_Config_position_tag:
+      Serial.printf("Config:position_tag:  position_broadcast_secs: %d\r\n", config->payload_variant.position.position_broadcast_secs);
+      Serial.printf("Config:position_tag:  position_broadcast_smart_enabled: %d\r\n", config->payload_variant.position.position_broadcast_smart_enabled);
+      Serial.printf("Config:position_tag:  fixed_position: %d\r\n", config->payload_variant.position.fixed_position);
+      Serial.printf("Config:position_tag:  gps_enabled: %d\r\n", config->payload_variant.position.gps_enabled);
+      Serial.printf("Config:position_tag:  gps_update_interval: %d\r\n", config->payload_variant.position.gps_update_interval);
+      Serial.printf("Config:position_tag:  gps_attempt_time: %d\r\n", config->payload_variant.position.gps_attempt_time);
+      Serial.printf("Config:position_tag:  position_flags: %d\r\n", config->payload_variant.position.position_flags);
+      Serial.printf("Config:position_tag:  rx_gpio: %d\r\n", config->payload_variant.position.rx_gpio);
+      Serial.printf("Config:position_tag:  tx_gpio: %d\r\n", config->payload_variant.position.tx_gpio);
+      Serial.printf("Config:position_tag:  broadcast_smart_min_distance: %d\r\n", config->payload_variant.position.broadcast_smart_minimum_distance);
+      Serial.printf("Config:position_tag:  broadcast_smart_min_interval_secs: %d\r\n", config->payload_variant.position.broadcast_smart_minimum_interval_secs);
+      Serial.printf("Config:position_tag:  gps_en_gpio: %d\r\n", config->payload_variant.position.gps_en_gpio);
+      Serial.printf("Config:position_tag:  gps_mode %d\r\n", config->payload_variant.position.gps_mode);
+      break;
+
+    case meshtastic_Config_power_tag: 
+      Serial.printf("Config:power_tag:  is_power_saving %d\r\n", config->payload_variant.power.is_power_saving);
+      Serial.printf("Config:power_tag:  on_battery_shutdown_after_secs %d\r\n", config->payload_variant.power.on_battery_shutdown_after_secs);
+      Serial.printf("Config:power_tag:  adv_multiplier_override %f\r\n", config->payload_variant.power.adc_multiplier_override);
+      Serial.printf("Config:power_tag:  wait_bluetooth_secs %d\r\n", config->payload_variant.power.wait_bluetooth_secs);
+      Serial.printf("Config:power_tag:  sds_secs %d\r\n", config->payload_variant.power.sds_secs);
+      Serial.printf("Config:power_tag:  ls_secs %d\r\n", config->payload_variant.power.ls_secs);
+      Serial.printf("Config:power_tag:  min_wake_secs %d\r\n", config->payload_variant.power.min_wake_secs);
+      Serial.printf("Config:power_tag:  device_battery_ina_aaddr %d\r\n", config->payload_variant.power.device_battery_ina_address);
+      Serial.printf("Config:power_tag:  powermon_enables %d\r\n", config->payload_variant.power.powermon_enables);
+      break;
+
+    case meshtastic_Config_network_tag:
+      Serial.printf("Config:network_tag:wifi_enabled: %d  \r\n", config->payload_variant.network.wifi_enabled);
+      Serial.printf("Config:network_tag:wifi_ssid: %s  \r\n", config->payload_variant.network.wifi_ssid);
+      Serial.printf("Config:network_tag:wifi_psk: %s  \r\n", config->payload_variant.network.wifi_psk);
+      Serial.printf("Config:network_tag:ntp_server: %s  \r\n", config->payload_variant.network.ntp_server);
+      Serial.printf("Config:network_tag:eth_enabled: %d  \r\n", config->payload_variant.network.eth_enabled);
+      Serial.printf("Config:network_tag:addr_mode: %d  \r\n", config->payload_variant.network.address_mode);
+      Serial.printf("Config:network_tag:has_ipv4_config: %d  \r\n", config->payload_variant.network.has_ipv4_config);
+      Serial.printf("Config:network_tag:ipv4_config: %d  \r\n", config->payload_variant.network.ipv4_config);
+      Serial.printf("Config:network_tag:rsyslog_server: %s  \r\n", config->payload_variant.network.rsyslog_server);
+      break;
+
+    case meshtastic_Config_display_tag: 
+      Serial.printf("Config:display_tag:screen_on_seconds: %d  \r\n", config->payload_variant.display.screen_on_secs);
+      Serial.printf("Config:display_tag:gps_format: %d  \r\n", config->payload_variant.display.gps_format);
+      Serial.printf("Config:display_tag:auto_screen_carousel_secs: %d  \r\n", config->payload_variant.display.auto_screen_carousel_secs);
+      Serial.printf("Config:display_tag:compass_north_top: %d  \r\n", config->payload_variant.display.compass_north_top);
+      Serial.printf("Config:display_tag:flip_screen: %d  \r\n", config->payload_variant.display.flip_screen);
+      Serial.printf("Config:display_tag:units: %d  \r\n", config->payload_variant.display.units);
+      Serial.printf("Config:display_tag:oled: %d  \r\n", config->payload_variant.display.oled);
+      Serial.printf("Config:display_tag:displayMode: %d  \r\n", config->payload_variant.display.displaymode);
+      Serial.printf("Config:display_tag:heading_bold: %d  \r\n", config->payload_variant.display.heading_bold);
+      Serial.printf("Config:display_tag:wake_on_tap_or_motion: %d  \r\n", config->payload_variant.display.wake_on_tap_or_motion);
+      Serial.printf("Config:display_tag:compass_orientation: %d  \r\n", config->payload_variant.display.compass_orientation);
+      break;
+
+    case meshtastic_Config_lora_tag:
+      Serial.printf("Config:lora_tag:use_preset: %d  \r\n", config->payload_variant.lora.use_preset);
+      Serial.printf("Config:lora_tag:modem_preset: %d  \r\n", config->payload_variant.lora.modem_preset);
+      Serial.printf("Config:lora_tag:bandwidth: %d  \r\n", config->payload_variant.lora.bandwidth);
+      Serial.printf("Config:lora_tag:spread_factor: %d  \r\n", config->payload_variant.lora.spread_factor);
+      Serial.printf("Config:lora_tag:coding_rate: %d  \r\n", config->payload_variant.lora.coding_rate);
+      Serial.printf("Config:lora_tag:frequency_offset: %d  \r\n", config->payload_variant.lora.frequency_offset);
+      Serial.printf("Config:lora_tag:region: %d  \r\n", config->payload_variant.lora.region);
+      Serial.printf("Config:lora_tag:hot_limit: %d  \r\n", config->payload_variant.lora.hop_limit);
+      Serial.printf("Config:lora_tag:tx_enabled: %d  \r\n", config->payload_variant.lora.tx_enabled);
+      Serial.printf("Config:lora_tag:tx_power: %d  \r\n", config->payload_variant.lora.tx_power);
+      Serial.printf("Config:lora_tag:channel_num: %d  \r\n", config->payload_variant.lora.channel_num);
+      Serial.printf("Config:lora_tag:override_duty_cycle: %d  \r\n", config->payload_variant.lora.override_duty_cycle);
+      Serial.printf("Config:lora_tag:sx126x_rx_boosted_gain: %d  \r\n", config->payload_variant.lora.sx126x_rx_boosted_gain);
+      Serial.printf("Config:lora_tag:override_frequency: %d  \r\n", config->payload_variant.lora.override_frequency);
+      Serial.printf("Config:lora_tag:pa_fan_disabled: %d  \r\n", config->payload_variant.lora.pa_fan_disabled);
+      Serial.printf("Config:lora_tag:ignore_incoming_count: %d  \r\n", config->payload_variant.lora.ignore_incoming_count);
+      Serial.printf("Config:lora_tag:ignore_mqtt: %d  \r\n", config->payload_variant.lora.ignore_mqtt);
+      Serial.printf("Config:lora_tag:config_okay_to_mqtt: %d  \r\n", config->payload_variant.lora.config_ok_to_mqtt);
+      break;
+
+    case meshtastic_Config_bluetooth_tag: 
+      Serial.printf("Config:bluetooth_tag:  \r\n");
+      break;
+
+    case meshtastic_Config_security_tag: 
+      Serial.printf("Config:security_tag:  \r\n");
+      break;
+
+    case meshtastic_Config_sessionkey_tag: 
+      Serial.printf("Config:sessionkey_tag:  \r\n");
+      break;
+
+    default:
+      Serial.printf("Unknown Config_Tag payload variant: %d\r\n", config->which_payload_variant);
+  }
   return true;
 }
 
@@ -163,7 +267,59 @@ bool handle_FromRadio_log_record_tag(meshtastic_LogRecord *record) {
 }
 
 bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){ 
-  Serial.printf("Handle_moduleConfig_tag PayloadVariant: %d\r\n", module->which_payload_variant);
+  switch (module->which_payload_variant) {
+      case meshtastic_ModuleConfig_mqtt_tag:
+      Serial.printf("ModuleConfig:mqtt:enabled: %d\r\n", module->payload_variant.mqtt.enabled);
+      Serial.printf("ModuleConfig:mqtt:address: %s\r\n", module->payload_variant.mqtt.address);
+      Serial.printf("ModuleConfig:mqtt:username: %s\r\n", module->payload_variant.mqtt.username);
+      Serial.printf("ModuleConfig:mqtt:password: %s\r\n", module->payload_variant.mqtt.password);
+      Serial.printf("ModuleConfig:mqtt:encryption_enabled: %d\r\n", module->payload_variant.mqtt.encryption_enabled);
+      Serial.printf("ModuleConfig:mqtt:json_enabled: %d\r\n", module->payload_variant.mqtt.json_enabled);
+      Serial.printf("ModuleConfig:mqtt:root: %s\r\n", module->payload_variant.mqtt.root);
+      Serial.printf("ModuleConfig:mqtt:proxy_to_client_enabled: %d\r\n", module->payload_variant.mqtt.proxy_to_client_enabled);
+      Serial.printf("ModuleConfig:mqtt:map_reporting_enabled %d\r\n", module->payload_variant.mqtt.map_report_settings);
+      Serial.printf("ModuleConfig:mqtt:has_map_report_settings%d\r\n", module->payload_variant.mqtt.has_map_report_settings);
+      break;
+
+      case meshtastic_ModuleConfig_serial_tag:
+      break;
+
+      case meshtastic_ModuleConfig_external_notification_tag:
+      break;
+
+      case meshtastic_ModuleConfig_store_forward_tag:
+      break;
+
+      case meshtastic_ModuleConfig_range_test_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_telemetry_tag:
+      break;
+
+      case meshtastic_ModuleConfig_canned_message_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_audio_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_remote_hardware_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_neighbor_info_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_ambient_lighting_tag:
+      break;
+
+      case meshtastic_ModuleConfig_detection_sensor_tag: 
+      break;
+
+      case meshtastic_ModuleConfig_paxcounter_tag:
+      break;
+
+      default:
+        Serial.printf("Unknown payload variant: %d\r\n", module->which_payload_variant);
+  }
   return true;
 }
 
