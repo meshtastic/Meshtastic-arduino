@@ -610,11 +610,12 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
           Serial.printf("Unknown portnum %d\r\n", meshPacket->decoded.portnum);
             return false;
     }
-  } else {
-      Serial.printf("encoded packet on PortNum %d\r\n", meshPacket->decoded.portnum);
-      if (encrypted_callback != NULL)
+  } else if  (meshPacket -> which_payload_variant == meshtastic_MeshPacket_encrypted_tag ) {
+      Serial.printf("encoded packet From: %x To: %x\r\n", meshPacket->from, meshPacket->to);
+      if (encrypted_callback != NULL) {
           encrypted_callback(meshPacket->from, meshPacket->to, meshPacket->channel, meshPacket->public_key, &meshPacket->encrypted);
-
+    	    return true;
+      }
     	return false;
   }
   return true;
