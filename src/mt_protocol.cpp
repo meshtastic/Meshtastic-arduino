@@ -138,6 +138,10 @@ bool mt_send_heartbeat() {
 
 }
 
+void set_xxx_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text)) {
+  xxx_callback = callback;
+}
+
 void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text)) {
   text_message_callback = callback;
 }
@@ -557,15 +561,21 @@ bool handle_config_complete_id(uint32_t now, uint32_t config_complete_id) {
 
 bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   if (meshPacket->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
-    if (meshPacket->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
-      if (text_message_callback != NULL)
-        text_message_callback(meshPacket->from, meshPacket->to, meshPacket->channel, (const char*)meshPacket->decoded.payload.bytes);
-    } else {
-      // TODO handle other portnums
-      return false;
-    }
+	switch (meshPacket->decoded.portnum) {
+    	case meshtastic_PortNum_TEXT_MESSAGE_APP:
+      		if (text_message_callback != NULL) {
+        		text_message_callback(meshPacket->from, meshPacket->to, meshPacket->channel, (const char*)meshPacket->decoded.payload.bytes);
+    		} else {
+			}
+			break;
+		case meshtastic_PortNum_XXX:
+
+		default;
+    		d("Unknown portnum");
+      		return false;
+	}
   } else {
-    return false;
+    	return false;
   }
   return true;
 }
