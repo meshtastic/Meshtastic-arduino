@@ -143,7 +143,7 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
 }
 
 bool handle_id_tag(uint32_t id) {
-  Serial.printf("Handle_id_tag: ID: %d\r\n", id);
+  Serial.printf("id_tag: ID: %d\r\n", id);
   return true;
 }
 
@@ -239,15 +239,38 @@ bool handle_config_tag(meshtastic_Config *config) {
       break;
 
     case meshtastic_Config_bluetooth_tag: 
-      Serial.printf("Config:bluetooth_tag:  \r\n");
+      Serial.printf("Config:bluetooth_tag:enabled: %d  \r\n", config->payload_variant.bluetooth.enabled);
+      Serial.printf("Config:bluetooth_tag:fixed_pin: %d  \r\n", config->payload_variant.bluetooth.fixed_pin);
+      Serial.printf("Config:bluetooth_tag:mode: %d  \r\n", config->payload_variant.bluetooth.mode);
       break;
 
     case meshtastic_Config_security_tag: 
-      Serial.printf("Config:security_tag:  \r\n");
+      Serial.printf("Config:security_tag:is_managed: %d \r\n", config->payload_variant.security.is_managed);
+      Serial.printf("Config:security_tag:public_key: %x \r\n", config->payload_variant.security.public_key);
+      Serial.printf("Config:security_tag:private_key: %x \r\n", config->payload_variant.security.private_key);
+      Serial.printf("Config:security_tag:admin_key_count: %x \r\n", config->payload_variant.security.admin_key_count);
+      Serial.printf("Config:security_tag:serial_enabled: %x \r\n", config->payload_variant.security.serial_enabled);
+      Serial.printf("Config:security_tag:debug_log_api_enabled: %x \r\n", config->payload_variant.security.debug_log_api_enabled);
+      Serial.printf("Config:security_tag:admin_channel_enabled: %x \r\n", config->payload_variant.security.admin_channel_enabled);
       break;
 
     case meshtastic_Config_sessionkey_tag: 
-      Serial.printf("Config:sessionkey_tag:  \r\n");
+      Serial.printf("Config:sessionkey_tag:dummy_field: %x \r\n", config->payload_variant.sessionkey.dummy_field);
+      break;
+
+    case meshtastic_Config_device_ui_tag:
+      Serial.printf("Config.device_ui:alert_enabled: %d\r\n", config->payload_variant.device_ui.alert_enabled);
+      Serial.printf("Config.device_ui:banner_enabled: %d\r\n", config->payload_variant.device_ui.banner_enabled);
+      Serial.printf("Config.device_ui:has_node_filter: %d\r\n", config->payload_variant.device_ui.has_node_filter);
+      Serial.printf("Config.device_ui:has_node_highlight: %d\r\n", config->payload_variant.device_ui.has_node_highlight);
+      Serial.printf("Config.device_ui:language: %d\r\n", config->payload_variant.device_ui.language);
+      Serial.printf("Config.device_ui:node_filter: %d\r\n", config->payload_variant.device_ui.node_filter);
+      Serial.printf("Config.device_ui:node_highlight: %d\r\n", config->payload_variant.device_ui.node_highlight);
+      Serial.printf("Config.device_ui:pin_code: %d\r\n", config->payload_variant.device_ui.pin_code);
+      Serial.printf("Config.device_ui:ring_tone_id: %d\r\n", config->payload_variant.device_ui.ring_tone_id);
+      Serial.printf("Config.device_ui:screen_brightness: %d\r\n", config->payload_variant.device_ui.screen_brightness);
+      Serial.printf("Config.device_ui:screen_lock: %d\r\n", config->payload_variant.device_ui.screen_lock);
+      Serial.printf("Config.device_ui:screen_timeout: %d\r\n", config->payload_variant.device_ui.screen_timeout);
       break;
 
     default:
@@ -257,12 +280,17 @@ bool handle_config_tag(meshtastic_Config *config) {
 }
 
 bool handle_channel_tag(meshtastic_Channel *channel) {
-  Serial.printf("Handle_channel_tag %d\r\n", channel->index);
+  Serial.printf("ChannelTag:index: %d\r\n", channel->index);
+  Serial.printf("ChannelTag:has_settings: %d\r\n", channel->has_settings);
+  Serial.printf("ChannelTag:role: %d\r\n", channel->role);
   return true;
 }
 
 bool handle_FromRadio_log_record_tag(meshtastic_LogRecord *record) {
-  Serial.printf("Handle_FromRadio_log_record_tag %s\r\n", record->message);
+  Serial.printf("FromRadio_log_record:message: %s\r\n", record->message);
+  Serial.printf("FromRadio_log_record:time: %d\r\n", record->time);
+  Serial.printf("FromRadio_log_record:source: %s\r\n", record->source);
+  Serial.printf("FromRadio_log_record:level: %s\r\n", record->level);
   return true;
 }
 
@@ -278,43 +306,131 @@ bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){
       Serial.printf("ModuleConfig:mqtt:root: %s\r\n", module->payload_variant.mqtt.root);
       Serial.printf("ModuleConfig:mqtt:proxy_to_client_enabled: %d\r\n", module->payload_variant.mqtt.proxy_to_client_enabled);
       Serial.printf("ModuleConfig:mqtt:map_reporting_enabled %d\r\n", module->payload_variant.mqtt.map_report_settings);
-      Serial.printf("ModuleConfig:mqtt:has_map_report_settings%d\r\n", module->payload_variant.mqtt.has_map_report_settings);
+      Serial.printf("ModuleConfig:mqtt:has_map_report_settings %d\r\n", module->payload_variant.mqtt.has_map_report_settings);
       break;
 
       case meshtastic_ModuleConfig_serial_tag:
+        Serial.printf("ModuleConfig:serial:enabled: %d\r\n", module->payload_variant.serial.enabled);
+        Serial.printf("ModuleConfig:serial:echo: %d\r\n", module->payload_variant.serial.echo);
+        Serial.printf("ModuleConfig:serial:rxd-gpio-pin: %d\r\n", module->payload_variant.serial.rxd);
+        Serial.printf("ModuleConfig:serial:txd-gpio-pin: %d\r\n", module->payload_variant.serial.txd);
+        Serial.printf("ModuleConfig:serial:baud: %d\r\n", module->payload_variant.serial.baud);
+        Serial.printf("ModuleConfig:serial:timeout: %d\r\n", module->payload_variant.serial.timeout);
+        Serial.printf("ModuleConfig:serial:mode: %d\r\n", module->payload_variant.serial.mode);
+        Serial.printf("ModuleConfig:serial:override_console_serial_port: %d\r\n", module->payload_variant.serial.override_console_serial_port);
       break;
 
       case meshtastic_ModuleConfig_external_notification_tag:
+        Serial.printf("ModuleConfig:external_notification:enabled: %d\r\n", module->payload_variant.external_notification.enabled);
+        Serial.printf("ModuleConfig:external_notification:output_ms: %d\r\n", module->payload_variant.external_notification.output_ms);
+        Serial.printf("ModuleConfig:external_notification:output: %d\r\n", module->payload_variant.external_notification.output);
+        Serial.printf("ModuleConfig:external_notification:active: %d\r\n", module->payload_variant.external_notification.active);
+        Serial.printf("ModuleConfig:external_notification:alert_message: %d\r\n", module->payload_variant.external_notification.alert_message);
+        Serial.printf("ModuleConfig:external_notification:alert_bell: %d\r\n", module->payload_variant.external_notification.alert_bell);
+        Serial.printf("ModuleConfig:external_notification:use_pwm: %d\r\n", module->payload_variant.external_notification.use_pwm);
+        Serial.printf("ModuleConfig:external_notification:output_vibra: %d\r\n", module->payload_variant.external_notification.output_vibra);
+        Serial.printf("ModuleConfig:external_notification:output_buzzer: %d\r\n", module->payload_variant.external_notification.output_buzzer);
+        Serial.printf("ModuleConfig:external_notification:alert_message_vibra: %d\r\n", module->payload_variant.external_notification.alert_message_vibra);
+        Serial.printf("ModuleConfig:external_notification:alert_message_buzzer: %d\r\n", module->payload_variant.external_notification.alert_message_buzzer);
+        Serial.printf("ModuleConfig:external_notification:alert_bell_vibra: %d\r\n", module->payload_variant.external_notification.alert_bell_vibra);
+        Serial.printf("ModuleConfig:external_notification:alert_bell_buzzer: %d\r\n", module->payload_variant.external_notification.alert_bell_buzzer);
+        Serial.printf("ModuleConfig:external_notification:nag_timeout: %d\r\n", module->payload_variant.external_notification.nag_timeout);
+        Serial.printf("ModuleConfig:external_notification:use_i2s_as_buzzer: %d\r\n", module->payload_variant.external_notification.use_i2s_as_buzzer);
       break;
 
       case meshtastic_ModuleConfig_store_forward_tag:
+        Serial.printf("ModuleConfig:store_forward:enabled: %d\r\n", module->payload_variant.store_forward.enabled);
+        Serial.printf("ModuleConfig:store_forward:heartbeat: %d\r\n", module->payload_variant.store_forward.heartbeat);
+        Serial.printf("ModuleConfig:store_forward:history_return_max: %d\r\n", module->payload_variant.store_forward.history_return_max);
+        Serial.printf("ModuleConfig:store_forward:history_return_window: %d\r\n", module->payload_variant.store_forward.history_return_window);
+        Serial.printf("ModuleConfig:store_forward:is_server: %d\r\n", module->payload_variant.store_forward.is_server);
+        Serial.printf("ModuleConfig:store_forward:records: %d\r\n", module->payload_variant.store_forward.records);
       break;
 
       case meshtastic_ModuleConfig_range_test_tag: 
+        Serial.printf("ModuleConfig:range_test:enabled: %d\r\n", module->payload_variant.range_test.enabled);
+        Serial.printf("ModuleConfig:range_test:save: %d\r\n", module->payload_variant.range_test.save);
+        Serial.printf("ModuleConfig:range_test:sender: %d\r\n", module->payload_variant.range_test.sender);
       break;
 
       case meshtastic_ModuleConfig_telemetry_tag:
+        Serial.printf("ModuleConfig:telemetry:air_quality_enabled: %d\r\n", module->payload_variant.telemetry.air_quality_enabled);
+        Serial.printf("ModuleConfig:telemetry:air_quality_interval: %d\r\n", module->payload_variant.telemetry.air_quality_interval);
+        Serial.printf("ModuleConfig:telemetry:device_update_interval: %d\r\n", module->payload_variant.telemetry.device_update_interval);
+        Serial.printf("ModuleConfig:telemetry:environment_display_fahrenheit: %d\r\n", module->payload_variant.telemetry.environment_display_fahrenheit);
+        Serial.printf("ModuleConfig:telemetry:environment_measurement_enabled: %d\r\n", module->payload_variant.telemetry.environment_measurement_enabled);
+        Serial.printf("ModuleConfig:telemetry:environment_screen_enabled: %d\r\n", module->payload_variant.telemetry.environment_screen_enabled);
+        Serial.printf("ModuleConfig:telemetry:environment_update_interval: %d\r\n", module->payload_variant.telemetry.environment_update_interval);
+        Serial.printf("ModuleConfig:telemetry:health_measurement_enabled: %d\r\n", module->payload_variant.telemetry.health_measurement_enabled);
+        Serial.printf("ModuleConfig:telemetry:health_screen_enabled: %d\r\n", module->payload_variant.telemetry.health_screen_enabled);
+        Serial.printf("ModuleConfig:telemetry:health_update_interval: %d\r\n", module->payload_variant.telemetry.health_update_interval);
+        Serial.printf("ModuleConfig:telemetry:power_measurement_enabled: %d\r\n", module->payload_variant.telemetry.power_measurement_enabled);
+        Serial.printf("ModuleConfig:telemetry:power_update_interval: %d\r\n", module->payload_variant.telemetry.power_update_interval);
+
       break;
 
       case meshtastic_ModuleConfig_canned_message_tag: 
+        Serial.printf("ModuleConfig:canned_message:enabled: %d\r\n", module->payload_variant.canned_message.enabled);
+        Serial.printf("ModuleConfig:canned_message:allow_input_source: %d\r\n", module->payload_variant.canned_message.allow_input_source);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_event_ccw: %d\r\n", module->payload_variant.canned_message.inputbroker_event_ccw);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_event_cw: %d\r\n", module->payload_variant.canned_message.inputbroker_event_cw);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_event_pass: %d\r\n", module->payload_variant.canned_message.inputbroker_event_press);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_pin_a: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_a);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_pin_b: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_b);
+        Serial.printf("ModuleConfig:canned_message:inputbroker_pin_press: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_press);
+        Serial.printf("ModuleConfig:canned_message:rotary1_enabled: %d\r\n", module->payload_variant.canned_message.rotary1_enabled);
+        Serial.printf("ModuleConfig:canned_message:send_bell: %d\r\n", module->payload_variant.canned_message.send_bell);
+        Serial.printf("ModuleConfig:canned_message:updown1_enabled: %d\r\n", module->payload_variant.canned_message.updown1_enabled);
       break;
 
       case meshtastic_ModuleConfig_audio_tag: 
+        Serial.printf("ModuleConfig:audio:codec2_enabled: %d\r\n", module->payload_variant.audio.codec2_enabled);
+        Serial.printf("ModuleConfig:audio:bitrate: %d\r\n", module->payload_variant.audio.bitrate);
+        Serial.printf("ModuleConfig:audio:i2s_din: %d\r\n", module->payload_variant.audio.i2s_din);
+        Serial.printf("ModuleConfig:audio:i2s_sck: %d\r\n", module->payload_variant.audio.i2s_sck);
+        Serial.printf("ModuleConfig:audio:i2s_sd: %d\r\n", module->payload_variant.audio.i2s_sd);
+        Serial.printf("ModuleConfig:audio:i2s_ws: %d\r\n", module->payload_variant.audio.i2s_ws);
+        Serial.printf("ModuleConfig:audio:ptt_pin: %d\r\n", module->payload_variant.audio.ptt_pin);
       break;
 
       case meshtastic_ModuleConfig_remote_hardware_tag: 
+        Serial.printf("ModuleConfig:remote_hardware:enabled: %d\r\n", module->payload_variant.remote_hardware.enabled);
+        Serial.printf("ModuleConfig:remote_hardware:allow_undefined_pin_access: %d\r\n", module->payload_variant.remote_hardware.allow_undefined_pin_access);
+        Serial.printf("ModuleConfig:remote_hardware:available_pins: %d\r\n", module->payload_variant.remote_hardware.available_pins);
+        Serial.printf("ModuleConfig:remote_hardware:available_pins_count: %d\r\n", module->payload_variant.remote_hardware.available_pins_count);
+
       break;
 
       case meshtastic_ModuleConfig_neighbor_info_tag: 
+        Serial.printf("ModuleConfig:neighbor_info:enabled: %d\r\n", module->payload_variant.neighbor_info.enabled);
+        Serial.printf("ModuleConfig:neighbor_info:transmit_over_lora: %d\r\n", module->payload_variant.neighbor_info.transmit_over_lora);
+        Serial.printf("ModuleConfig:neighbor_info:update_interval: %d\r\n", module->payload_variant.neighbor_info.update_interval);
       break;
 
       case meshtastic_ModuleConfig_ambient_lighting_tag:
+        Serial.printf("ModuleConfig:ambient_lighting:led_state: %d\r\n", module->payload_variant.ambient_lighting.led_state);
+        Serial.printf("ModuleConfig:ambient_lighting:current: %d\r\n", module->payload_variant.ambient_lighting.current);
+        Serial.printf("ModuleConfig:ambient_lighting:red: %d\r\n", module->payload_variant.ambient_lighting.red);
+        Serial.printf("ModuleConfig:ambient_lighting:green: %d\r\n", module->payload_variant.ambient_lighting.green);
+        Serial.printf("ModuleConfig:ambient_lighting:blue: %d\r\n", module->payload_variant.ambient_lighting.blue);
       break;
 
       case meshtastic_ModuleConfig_detection_sensor_tag: 
+        Serial.printf("ModuleConfig:detection_sensor:enabled: %d\r\n", module->payload_variant.detection_sensor.enabled);
+        Serial.printf("ModuleConfig:detection_sensor:detection_trigger_type: %d\r\n", module->payload_variant.detection_sensor.detection_trigger_type);
+        Serial.printf("ModuleConfig:detection_sensor:min_broadcast_secs: %d\r\n", module->payload_variant.detection_sensor.minimum_broadcast_secs);
+        Serial.printf("ModuleConfig:detection_sensor:monitor_pin: %d\r\n", module->payload_variant.detection_sensor.monitor_pin);
+        Serial.printf("ModuleConfig:detection_sensor:name: %d\r\n", module->payload_variant.detection_sensor.name);
+        Serial.printf("ModuleConfig:detection_sensor:send_bell: %d\r\n", module->payload_variant.detection_sensor.send_bell);
+        Serial.printf("ModuleConfig:detection_sensor:state_broadcast_secs: %d\r\n", module->payload_variant.detection_sensor.state_broadcast_secs);
+        Serial.printf("ModuleConfig:detection_sensor:use_pullup: %d\r\n", module->payload_variant.detection_sensor.use_pullup);
       break;
 
       case meshtastic_ModuleConfig_paxcounter_tag:
+        Serial.printf("ModuleConfig:paxcounter:enabled: %d\r\n", module->payload_variant.paxcounter.enabled);
+        Serial.printf("ModuleConfig:paxcounter:ble_threshold: %d\r\n", module->payload_variant.paxcounter.ble_threshold);
+        Serial.printf("ModuleConfig:paxcounter:paxcounter_update_interval: %d\r\n", module->payload_variant.paxcounter.paxcounter_update_interval);
+        Serial.printf("ModuleConfig:paxcounter:wifi_threshold: %d\r\n", module->payload_variant.paxcounter.wifi_threshold);
       break;
 
       default:
@@ -324,27 +440,52 @@ bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){
 }
 
 bool handle_queueStatus_tag(meshtastic_QueueStatus *qstatus) {
-  Serial.printf("Handle_queueStatus_tag maxlen: %d\r\n", qstatus->maxlen);
+  Serial.printf("queueStatus: maxlen: %d\r\n", qstatus->maxlen);
+  Serial.printf("queueStatus: res: %d\r\n", qstatus->res);
+  Serial.printf("queueStatus: free: %d\r\n", qstatus->free);
+  Serial.printf("queueStatus: mesh_packet_id: %d\r\n", qstatus->mesh_packet_id);
   return true;
 }
 
 bool handle_xmodemPacket_tag(meshtastic_XModem *packet) {
-  Serial.printf("Handle_xmodem_tag XModem Sequence # %d\r\n", packet->seq);
+  Serial.printf("XmodemPacket: XModem control #: %d\r\n", packet->control);
+  Serial.printf("XmodemPacket: XModem sequence #: %d\r\n", packet->seq);
+  Serial.printf("XmodemPacket: XModem crc16: %d\r\n", packet->crc16);
   return true;
 }
 
 bool handle_metatag_data(meshtastic_DeviceMetadata *meta) {
-  Serial.printf("Handle_metatag_data FW Version: %s\r\n", meta->firmware_version);
+  Serial.printf("metatag_data:FW Version: %s\r\n", meta->firmware_version);
+  Serial.printf("metatag_data:device_state_version: %d\r\n", meta->device_state_version);
+  Serial.printf("metatag_data:canShutdown: %d\r\n", meta->canShutdown);
+  Serial.printf("metatag_data:hasWiFi: %d\r\n", meta->hasWifi);
+  Serial.printf("metatag_data:hasBluetooth: %d\r\n", meta->hasBluetooth);
+  Serial.printf("metatag_data:hasEthernet: %d\r\n", meta->hasEthernet);
+  Serial.printf("metatag_data:role: %d\r\n", meta->role);
+  Serial.printf("metatag_data:positionFlags: %d\r\n", meta->position_flags);
+  Serial.printf("metatag_data:hw_model: %d\r\n", meta->hw_model);
+  Serial.printf("metatag_data:hasRemoteHardware: %d\r\n", meta->hasRemoteHardware);
+  Serial.printf("metatag_data:excludedModules: %d\r\n", meta->excluded_modules);
   return true;
 }
 
 bool handle_mqttClientProxyMessage_tag(meshtastic_MqttClientProxyMessage *mqtt) {
-  Serial.printf("Handle_mqttClientProxyMessage_tag Topic: %s\r\n", mqtt->topic);
+  Serial.printf("mqttClientProxyMessage:Topic: %s\r\n", mqtt->topic);
+  switch (mqtt->which_payload_variant) {
+    case meshtastic_MqttClientProxyMessage_data_tag:
+      // TODO - INVALID Serial.printf("mqttClientProxyMessage:data: %s\r\n", mqtt->payload_variant.data);
+      break;
+    case meshtastic_MqttClientProxyMessage_text_tag:
+      Serial.printf("mqttClientProxyMessage:text %s\r\n", mqtt->payload_variant.text);
+      break;
+  }
+  Serial.printf("mqttClientProxyMessage:retained: %d\r\n", mqtt->retained);
   return true;
 }
 
 bool handle_fileInfo_tag(meshtastic_FileInfo *fInfo) {
-  Serial.printf("Handle_fileInfo_tag FileName: %s\r\n", fInfo->file_name);
+  Serial.printf("fileInfo:fileName: %s\r\n", fInfo->file_name);
+  Serial.printf("fileInfo:sizeBytes: %d\r\n", fInfo->size_bytes);
   return true;
 }
 
