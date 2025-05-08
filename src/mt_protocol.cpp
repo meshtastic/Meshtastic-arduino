@@ -34,6 +34,9 @@ uint32_t my_node_num = 0;
 
 bool mt_debugging = false;
 void (*text_message_callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text) = NULL;
+void (*portnum_callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_PortNum port, meshtastic_Data_payload_t *payload) = NULL;
+void (*encrypted_callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_MeshPacket_public_key_t pubKey, meshtastic_MeshPacket_encrypted_t *enc_payload) = NULL;
+
 void (*node_report_callback)(mt_node_t *, mt_nr_progress_t) = NULL;
 mt_node_t node;
 
@@ -138,8 +141,12 @@ bool mt_send_heartbeat() {
 
 }
 
-void set_xxx_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text)) {
-  xxx_callback = callback;
+void set_portnum_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_PortNum port, meshtastic_Data_payload_t *payload)) {
+  portnum_callback = callback;
+}
+
+void set_encrypted_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_MeshPacket_public_key_t pubKey, meshtastic_MeshPacket_encrypted_t *payload)) {
+  encrypted_callback = callback;
 }
 
 void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text)) {
@@ -561,20 +568,53 @@ bool handle_config_complete_id(uint32_t now, uint32_t config_complete_id) {
 
 bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
   if (meshPacket->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
-	switch (meshPacket->decoded.portnum) {
-    	case meshtastic_PortNum_TEXT_MESSAGE_APP:
-      		if (text_message_callback != NULL) {
-        		text_message_callback(meshPacket->from, meshPacket->to, meshPacket->channel, (const char*)meshPacket->decoded.payload.bytes);
-    		} else {
-			}
-			break;
-		case meshtastic_PortNum_XXX:
+    switch (meshPacket->decoded.portnum) {
+        case meshtastic_PortNum_TEXT_MESSAGE_APP:
+            if (text_message_callback != NULL) {
+              text_message_callback(meshPacket->from, meshPacket->to, meshPacket->channel, (const char*)meshPacket->decoded.payload.bytes);
+          } else {
+        }
+        break;
+      case meshtastic_PortNum_ADMIN_APP:
+      case meshtastic_PortNum_ATAK_FORWARDER:
+      case meshtastic_PortNum_ATAK_PLUGIN:
+      case meshtastic_PortNum_AUDIO_APP: 
+      case meshtastic_PortNum_DETECTION_SENSOR_APP: 
+      case meshtastic_PortNum_IP_TUNNEL_APP: 
+      case meshtastic_PortNum_MAP_REPORT_APP:
+      case meshtastic_PortNum_MAX: 
+      case meshtastic_PortNum_NEIGHBORINFO_APP: 
+      case meshtastic_PortNum_NODEINFO_APP: 
+      case meshtastic_PortNum_PAXCOUNTER_APP:
+      case meshtastic_PortNum_POSITION_APP: 
+      case meshtastic_PortNum_POWERSTRESS_APP: 
+      case meshtastic_PortNum_PRIVATE_APP: 
+      case meshtastic_PortNum_RANGE_TEST_APP:
+      case meshtastic_PortNum_REMOTE_HARDWARE_APP: 
+      case meshtastic_PortNum_REPLY_APP: 
+      case meshtastic_PortNum_ROUTING_APP:
+      case meshtastic_PortNum_SERIAL_APP:
+      case meshtastic_PortNum_SIMULATOR_APP:
+      case meshtastic_PortNum_STORE_FORWARD_APP:
+      case meshtastic_PortNum_TELEMETRY_APP: 
+      case meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP:
+      case meshtastic_PortNum_TRACEROUTE_APP: 
+      case meshtastic_PortNum_UNKNOWN_APP: 
+      case meshtastic_PortNum_WAYPOINT_APP: 
+      case meshtastic_PortNum_ZPS_APP:
+        if (portnum_callback != NULL)
+          portnum_callback(meshPacket->from, meshPacket->to, meshPacket->channel, meshPacket->decoded.portnum, &meshPacket->decoded.payload);
+        break;
 
-		default;
-    		d("Unknown portnum");
-      		return false;
-	}
+      default:
+          Serial.printf("Unknown portnum %d\r\n", meshPacket->decoded.portnum);
+            return false;
+    }
   } else {
+      Serial.printf("encoded packet on PortNum %d\r\n", meshPacket->decoded.portnum);
+      if (encrypted_callback != NULL)
+          encrypted_callback(meshPacket->from, meshPacket->to, meshPacket->channel, meshPacket->public_key, &meshPacket->encrypted);
+
     	return false;
   }
   return true;
