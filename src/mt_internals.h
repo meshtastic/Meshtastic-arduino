@@ -5,7 +5,7 @@
 
 extern bool mt_debugging;
 void mt_debug_print(const char * s);
-#define d(s) mt_debug_print(s)
+void d(const char * fmt, ...);
 
 extern bool mt_wifi_mode;
 extern bool mt_serial_mode;
