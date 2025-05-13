@@ -67,9 +67,6 @@ void setup() {
 #endif
   Serial.println(" mode");
 
-  // Set to true if you want debug messages
-  mt_set_debug(false);
-  
   randomSeed(micros());
 }
 
