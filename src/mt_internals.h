@@ -3,7 +3,8 @@
 
 #include "Meshtastic.h"
 
-#undef MT_DEBUGGING 
+// Uncomment the line below to enable debugging 
+// #define MT_DEBUGGING
 #ifdef MT_DEBUGGING
 #define d(...) _d(__VA_ARGS__)
 #else
