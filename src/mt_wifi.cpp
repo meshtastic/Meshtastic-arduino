@@ -99,7 +99,9 @@ bool mt_wifi_loop(uint32_t now) {
       // We just connected to WiFi! Now try to make a TCP connection. If it fails, nobody's
       // actually noticing, but we'll time out soon enough when no packets come in, and then
       // we'll try again from the beginning.
-      if (mt_debugging) print_wifi_status();
+#ifdef MT_DEBUGGING	
+	  print_wifi_status();
+#endif
       mt_wifi_reset_idle_timeout(now);
       open_tcp_connection();
       return can_send;
@@ -117,10 +119,10 @@ bool mt_wifi_loop(uint32_t now) {
     default:
       // None of these should ever happen. If they do, let me know what led to them and I'll
       // update this switch statement.
-      if (mt_debugging) {
+#if MT_DEBUGGING
         Serial.print("Unknown WiFi status ");
         Serial.println(wifi_status);
-      }
+#endif
       while(true);
   }
 }
@@ -162,12 +164,12 @@ bool mt_wifi_send_radio(const char * buf, size_t len) {
   size_t wrote = client.write(buf, len);
   if (wrote == len) return true;
 
-  if (mt_debugging) {
+#ifdef MT_DEBUGGING
     Serial.print("Tried to send radio ");
     Serial.print(len);
     Serial.print(" but actually sent ");
     Serial.println(wrote);
-  }
+#endif
   client.stop();
   return false;
 }

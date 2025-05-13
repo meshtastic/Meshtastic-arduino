@@ -32,12 +32,12 @@ bool mt_serial_send_radio(const char * buf, size_t len) {
   size_t wrote = serial->write(buf, len);
   if (wrote == len) return true;
 
-  if (mt_debugging) {
+#ifdef MT_DEBUGGING
     Serial.print("Tried to send radio ");
     Serial.print(len);
     Serial.print(" but actually sent ");
     Serial.println(wrote);
-  }
+#endif
 
   return false;
 }

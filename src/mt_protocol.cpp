@@ -32,7 +32,6 @@ uint32_t want_config_id = 0;
 // Node number of the MT node hosting our WiFi
 uint32_t my_node_num = 0;
 
-bool mt_debugging = false;
 void (*text_message_callback)(uint32_t from, uint32_t to,  uint8_t channel, const char* text) = NULL;
 void (*portnum_callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_PortNum port, meshtastic_Data_payload_t *payload) = NULL;
 void (*encrypted_callback)(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_MeshPacket_public_key_t pubKey, meshtastic_MeshPacket_encrypted_t *enc_payload) = NULL;
@@ -44,18 +43,13 @@ bool mt_wifi_mode = false;
 bool mt_serial_mode = false;
 
 #define VA_BUFSIZE 512
-void d(const char * fmt, ...) {
+void _d(const char * fmt, ...) {
   static char vabuf[VA_BUFSIZE];
-  if (mt_debugging) {
-	  va_list ap;
-	  va_start(ap, fmt);
-	  vsnprintf(vabuf, sizeof(vabuf), fmt, ap);
-	  Serial.println(vabuf);
-  }
-}
-
-void mt_set_debug(bool on) {
-  mt_debugging = on;
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(vabuf, sizeof(vabuf), fmt, ap);
+  Serial.println(vabuf);
+  Serial.flush();
 }
 
 bool mt_send_radio(const char * buf, size_t len) {
@@ -103,10 +97,10 @@ bool mt_request_node_report(void (*callback)(mt_node_t *, mt_nr_progress_t)) {
   want_config_id = random(0x7FffFFff);  // random() can't handle anything bigger
   toRadio.want_config_id = want_config_id;
 
-  if (mt_debugging) {
-    Serial.print("Requesting node report with random ID ");
-    Serial.println(want_config_id);
-  }
+#ifdef MT_DEBUGGING
+  Serial.print("Requesting node report with random ID ");
+  Serial.println(want_config_id);
+#endif
 
   bool rv = _mt_send_toRadio(toRadio);
 
@@ -683,7 +677,7 @@ bool handle_packet(uint32_t now, size_t payload_len) {
       return handle_fileInfo_tag(&fromRadio.fileInfo); 
 
     default:
-      if (mt_debugging) {
+#ifdef MT_DEBUGGING
         // Rate limit
         // Serial input buffer overflows during initial connection, while we're slowly printing these at 9600 baud
         constexpr uint32_t limitMs = 100; 
@@ -694,7 +688,7 @@ bool handle_packet(uint32_t now, size_t payload_len) {
             Serial.print("Got a payloadVariant we don't recognize: ");
             Serial.println(fromRadio.which_payload_variant);
         }
-      }
+#endif
       return false;
   }
 
@@ -728,14 +722,14 @@ void mt_protocol_check_packet(uint32_t now) {
   }
 
   /*
-  if (mt_debugging) {
+#ifdef MT_DEBUGGING
     Serial.print("Got a full packet! ");
     for (int i = 0 ; i < pb_size ; i++) {
       Serial.print(pb_buf[i], HEX);
       Serial.print(" ");
     }
     Serial.println();
-  }
+#endif
   */
 
   handle_packet(now, payload_len);
