@@ -16,6 +16,9 @@
 
 */
 
+// Uncomment the line below to enable debugging 
+// #define MT_DEBUGGING
+
 #include <Meshtastic.h>
 
 // Pins to use for WiFi; these defaults are for an Adafruit Feather M0 WiFi.
@@ -67,9 +70,6 @@ void setup() {
 #endif
   Serial.println(" mode");
 
-  // Set to true if you want debug messages
-  mt_set_debug(false);
-  
   randomSeed(micros());
 }
 

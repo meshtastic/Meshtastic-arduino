@@ -3,9 +3,13 @@
 
 #include "Meshtastic.h"
 
-extern bool mt_debugging;
-void mt_debug_print(const char * s);
-#define d(s) mt_debug_print(s)
+#ifdef MT_DEBUGGING
+#define d(...) _d(__VA_ARGS__)
+#else
+#define d(...) do {} while (0) 
+#endif
+
+void _d(const char * fmt, ...);
 
 extern bool mt_wifi_mode;
 extern bool mt_serial_mode;
