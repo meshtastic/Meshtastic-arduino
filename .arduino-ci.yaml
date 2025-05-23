@@ -2,4 +2,4 @@ only_boards:
   - esp8266:esp8266:generic
   - arduino:renesas_uno:unor4wifi
 library_archives:
-  - Nanopb=https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.tar.gz=0
+  - Nanopb=https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.tar.gz=023lacp4i6r58n0156ibrzm3sgf3bqhsbd7l0canwry2m08m8y6d
