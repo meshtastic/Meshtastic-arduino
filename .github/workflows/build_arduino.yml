@@ -15,5 +15,5 @@ jobs:
           ~/.arduino15
         key: ${{ runner.os }}-arduino
     - name: Install nix
-      uses: cachix/install-nix-action@v30
+      uses: cachix/install-nix-action@v31
     - run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
