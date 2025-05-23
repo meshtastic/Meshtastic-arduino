@@ -9,6 +9,9 @@
     which prints the message to the serial console.
 */
 
+// Uncomment the line below to enable debugging 
+// #define MT_DEBUGGING
+
 #include <Meshtastic.h>
 
 // Pins to use for WiFi; these defaults are for an Adafruit Feather M0 WiFi.
@@ -23,7 +26,7 @@
 #define SERIAL_RX_PIN 13
 #define SERIAL_TX_PIN 15
 // A different baud rate to communicate with the Meshtastic device can be specified here
-#define BAUD_RATE 9600
+#define BAUD_RATE 38400
 
 // Send a text message every this many seconds
 #define SEND_PERIOD 300
@@ -36,6 +39,58 @@ void connected_callback(mt_node_t *node, mt_nr_progress_t progress) {
   if (not_yet_connected) 
     Serial.println("Connected to Meshtastic device!");
   not_yet_connected = false;
+}
+
+
+const char* meshtastic_portnum_to_string(meshtastic_PortNum port) {
+  switch (port) {
+      case meshtastic_PortNum_UNKNOWN_APP: return "UNKNOWN_APP";
+      case meshtastic_PortNum_TEXT_MESSAGE_APP: return "TEXT_MESSAGE_APP";
+      case meshtastic_PortNum_REMOTE_HARDWARE_APP: return "REMOTE_HARDWARE_APP";
+      case meshtastic_PortNum_POSITION_APP: return "POSITION_APP";
+      case meshtastic_PortNum_NODEINFO_APP: return "NODEINFO_APP";
+      case meshtastic_PortNum_ROUTING_APP: return "ROUTING_APP";
+      case meshtastic_PortNum_ADMIN_APP: return "ADMIN_APP";
+      case meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP: return "TEXT_MESSAGE_COMPRESSED_APP";
+      case meshtastic_PortNum_WAYPOINT_APP: return "WAYPOINT_APP";
+      case meshtastic_PortNum_AUDIO_APP: return "AUDIO_APP";
+      case meshtastic_PortNum_DETECTION_SENSOR_APP: return "DETECTION_SENSOR_APP";
+      case meshtastic_PortNum_REPLY_APP: return "REPLY_APP";
+      case meshtastic_PortNum_IP_TUNNEL_APP: return "IP_TUNNEL_APP";
+      case meshtastic_PortNum_PAXCOUNTER_APP: return "PAXCOUNTER_APP";
+      case meshtastic_PortNum_SERIAL_APP: return "SERIAL_APP";
+      case meshtastic_PortNum_STORE_FORWARD_APP: return "STORE_FORWARD_APP";
+      case meshtastic_PortNum_RANGE_TEST_APP: return "RANGE_TEST_APP";
+      case meshtastic_PortNum_TELEMETRY_APP: return "TELEMETRY_APP";
+      case meshtastic_PortNum_ZPS_APP: return "ZPS_APP";
+      case meshtastic_PortNum_SIMULATOR_APP: return "SIMULATOR_APP";
+      case meshtastic_PortNum_TRACEROUTE_APP: return "TRACEROUTE_APP";
+      case meshtastic_PortNum_NEIGHBORINFO_APP: return "NEIGHBORINFO_APP";
+      case meshtastic_PortNum_ATAK_PLUGIN: return "ATAK_PLUGIN";
+      case meshtastic_PortNum_MAP_REPORT_APP: return "MAP_REPORT_APP";
+      case meshtastic_PortNum_POWERSTRESS_APP: return "POWERSTRESS_APP";
+      case meshtastic_PortNum_PRIVATE_APP: return "PRIVATE_APP";
+      case meshtastic_PortNum_ATAK_FORWARDER: return "ATAK_FORWARDER";
+      case meshtastic_PortNum_MAX: return "MAX";
+      default: return "UNKNOWN_PORTNUM";
+  }
+}
+
+void displayPubKey(meshtastic_MeshPacket_public_key_t pubKey, char *hex_str) {
+      for (int i = 0; i < 32; i++) {
+          sprintf(&hex_str[i * 2], "%02x", (unsigned char)pubKey.bytes[i]);
+      }
+  
+      hex_str[64] = '\0'; // Null terminator
+}
+
+
+void encrypted_callback(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_MeshPacket_public_key_t pubKey, meshtastic_MeshPacket_encrypted_t *enc_payload) {
+  Serial.printf("Received an ENCRYPTED callback from: %x to: %x\r\n", from, to);
+}
+
+void portnum_callback(uint32_t from, uint32_t to,  uint8_t channel, meshtastic_PortNum portNum, meshtastic_Data_payload_t *payload) {
+  Serial.printf("Received a callback for PortNum %s\r\n", meshtastic_portnum_to_string(portNum));
 }
 
 // This callback function will be called whenever the radio receives a text message
@@ -59,8 +114,8 @@ void text_message_callback(uint32_t from, uint32_t to,  uint8_t channel, const c
 }
 
 void setup() {
-  // Try for up to five seconds to find a serial port; if not, the show must go on
-  Serial.begin(9600);
+  // Try for up to five seconds to find a serial port; if not, the show must gox on
+  Serial.begin(115200);
   while(true) {
     if (Serial) break;
     if (millis() > 5000) {
@@ -82,9 +137,6 @@ void setup() {
 #endif
   Serial.println(" mode");
 
-  // Set to true if you want debug messages
-  mt_set_debug(false);
-  
   randomSeed(micros());
 
   // Initial connection to the Meshtastic device
@@ -92,6 +144,8 @@ void setup() {
 
   // Register a callback function to be called whenever a text message is received
   set_text_message_callback(text_message_callback);
+  set_portnum_callback(portnum_callback);
+  set_encrypted_callback(encrypted_callback);
 }
 
 void loop() {
