@@ -12,7 +12,7 @@
 #endif
 
 void mt_serial_init(int8_t rx_pin, int8_t tx_pin, uint32_t baud) {
-
+delay(4000);                    //Needed to allow for firmware of lora device to boot up 
 // Platform specific: init serial
 #if defined(ARDUINO_ARCH_SAMD)
   serial->begin(baud);
