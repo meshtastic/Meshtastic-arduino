@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout this repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Cache for arduino-ci
       uses: actions/cache@v4
       with:
