@@ -9,7 +9,7 @@ jobs:
     - name: Checkout this repository
       uses: actions/checkout@v4
     - name: Cache for arduino-ci
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.arduino15
