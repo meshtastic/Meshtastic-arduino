@@ -3,13 +3,15 @@
 
 #include "Meshtastic.h"
 
+#if !defined(ESP_PLATFORM)
 #ifdef MT_DEBUGGING
 #define d(...) _d(__VA_ARGS__)
 #else
-#define d(...) do {} while (0) 
+#define d(...) do {} while (0)
 #endif
 
 void _d(const char * fmt, ...);
+#endif
 
 extern bool mt_wifi_mode;
 extern bool mt_serial_mode;
