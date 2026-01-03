@@ -514,6 +514,7 @@ bool handle_node_info(meshtastic_NodeInfo *nodeInfo) {
   node.node_num = nodeInfo->num;
   node.is_mine = nodeInfo->num == my_node_num;
   node.last_heard_from = nodeInfo->last_heard;
+  node.is_favorite = nodeInfo->is_favorite;
   node.has_user = nodeInfo->has_user;
   if (node.has_user) {
     memcpy(node.user_id, nodeInfo->user.id, MAX_USER_ID_LEN);
