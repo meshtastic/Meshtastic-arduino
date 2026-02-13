@@ -24,6 +24,7 @@ extern uint32_t my_node_num;
 typedef struct {
   uint32_t node_num;
   bool is_mine;
+  bool is_favorite;
   bool has_user;
   char user_id[MAX_USER_ID_LEN];
   char long_name[MAX_LONG_NAME_LEN];
