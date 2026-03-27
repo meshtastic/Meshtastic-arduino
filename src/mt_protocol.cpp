@@ -1,5 +1,20 @@
 #include "mt_internals.h"
 
+#if defined(ESP_PLATFORM)
+#include "esp_log.h"
+#include <cmath>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <random>
+
+#define delay(ms) vTaskDelay((ms) / portTICK_PERIOD_MS)
+#define millis() (xTaskGetTickCount() * portTICK_PERIOD_MS)
+
+static std::random_device rand_dev;
+static std::mt19937       generator(rand_dev());
+#define random(x) std::uniform_int_distribution<uint32_t>(0, x)(generator)
+#endif
+
 // Magic number at the start of all MT packets
 #define MT_MAGIC_0 0x94
 #define MT_MAGIC_1 0xc3
@@ -42,6 +57,12 @@ mt_node_t node;
 bool mt_wifi_mode = false;
 bool mt_serial_mode = false;
 
+#if defined(ESP_PLATFORM)
+#define D(...) ESP_LOGD("Meshtastic", __VA_ARGS__)
+#define D_CRLF
+#else
+#define D d
+#define  D_CRLF " \r\n"
 #define VA_BUFSIZE 512
 void _d(const char * fmt, ...) {
   static char vabuf[VA_BUFSIZE];
@@ -51,6 +72,7 @@ void _d(const char * fmt, ...) {
   Serial.println(vabuf);
   Serial.flush();
 }
+#endif
 
 bool mt_send_radio(const char * buf, size_t len) {
   if (mt_wifi_mode) {
@@ -62,7 +84,11 @@ bool mt_send_radio(const char * buf, size_t len) {
   } else if (mt_serial_mode) {
     return mt_serial_send_radio(buf, len);
   } else {
+#if defined(ESP_PLATFORM)
+    ESP_LOGE("Meshtastic", "mt_send_radio() called but it was never initialized");
+#else
     Serial.println("mt_send_radio() called but it was never initialized");
+#endif
     while(1);
   }
 }
@@ -74,7 +100,11 @@ bool _mt_send_toRadio(meshtastic_ToRadio toRadio) {
   pb_ostream_t stream = pb_ostream_from_buffer(pb_buf + 4, PB_BUFSIZE);
   bool status = pb_encode(&stream, meshtastic_ToRadio_fields, &toRadio);
   if (!status) {
+#if defined(ESP_PLATFORM)
+    ESP_LOGE("Meshtastic", "Couldn't encode toRadio");
+#else
     d("Couldn't encode toRadio");
+#endif
     return false;
   }
 
@@ -122,17 +152,25 @@ bool mt_send_text(const char * text, uint32_t dest, uint8_t channel_index) {
   meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
   toRadio.which_payload_variant = meshtastic_ToRadio_packet_tag;
   toRadio.packet = meshPacket;
-  
+
+#if defined(ESP_PLATFORM)
+  ESP_LOGD("Meshtastic", "Sending text message '%s' to %d", text, dest);
+#else
   Serial.print("Sending text message '");
   Serial.print(text);
   Serial.print("' to ");
   Serial.println(dest);
+#endif
   return _mt_send_toRadio(toRadio);
 }
 
 bool mt_send_heartbeat() {
 
+#if defined(ESP_PLATFORM)
+  ESP_LOGD("Meshtastic", "Sending heartbeat");
+#else
   d("Sending heartbeat");
+#endif
 
   meshtastic_ToRadio toRadio = meshtastic_ToRadio_init_default;
   toRadio.which_payload_variant = meshtastic_ToRadio_heartbeat_tag;
@@ -155,349 +193,357 @@ void set_text_message_callback(void (*callback)(uint32_t from, uint32_t to,  uin
 }
 
 bool handle_id_tag(uint32_t id) {
-  d("id_tag: ID: %d\r\n", id);
+  D("id_tag: ID: %d" D_CRLF, id);
   return true;
 }
 
 bool handle_config_tag(meshtastic_Config *config) {
   switch (config->which_payload_variant) {
     case meshtastic_Config_device_tag:
-      d("Config:device_tag:  role: %d\r\n", config->payload_variant.device.role);
-      d("Config:device_tag:  serial enabled: %d\r\n", config->payload_variant.device.serial_enabled);
-      d("Config:device_tag:  button gpio: %d\r\n", config->payload_variant.device.button_gpio);
-      d("Config:device_tag:  buzzer gpio: %d\r\n", config->payload_variant.device.buzzer_gpio);
-      d("Config:device_tag:  rebroadcast mode: %d\r\n", config->payload_variant.device.rebroadcast_mode);
-      d("Config:device_tag:  node_info_broadcast_secs: %d\r\n", config->payload_variant.device.node_info_broadcast_secs);
-      d("Config:device_tag:  double-tap-as-button-press: %d\r\n", config->payload_variant.device.double_tap_as_button_press);
-      d("Config:device_tag:  is_managed: %d\r\n", config->payload_variant.device.is_managed);
-      d("Config:device_tag:  disable_triple_click: %d\r\n", config->payload_variant.device.disable_triple_click);
-      d("Config:device_tag:  tz_def: %s\r\n", config->payload_variant.device.tzdef);
-      d("Config:device_tag:  led_heartbeat_disabled: %d\r\n", config->payload_variant.device.led_heartbeat_disabled);
+      D("Config:device_tag:  role: %" D_CRLF, config->payload_variant.device.role);
+      D("Config:device_tag:  serial enabled: %" D_CRLF, config->payload_variant.device.serial_enabled);
+      D("Config:device_tag:  button gpio: %" D_CRLF, config->payload_variant.device.button_gpio);
+      D("Config:device_tag:  buzzer gpio: %" D_CRLF, config->payload_variant.device.buzzer_gpio);
+      D("Config:device_tag:  rebroadcast mode: %" D_CRLF, config->payload_variant.device.rebroadcast_mode);
+      D("Config:device_tag:  node_info_broadcast_secs: %" D_CRLF, config->payload_variant.device.node_info_broadcast_secs);
+      D("Config:device_tag:  double-tap-as-button-press: %" D_CRLF, config->payload_variant.device.double_tap_as_button_press);
+      D("Config:device_tag:  is_managed: %" D_CRLF, config->payload_variant.device.is_managed);
+      D("Config:device_tag:  disable_triple_click: %" D_CRLF, config->payload_variant.device.disable_triple_click);
+      D("Config:device_tag:  tz_def: %" D_CRLF, config->payload_variant.device.tzdef);
+      D("Config:device_tag:  led_heartbeat_disabled: %" D_CRLF, config->payload_variant.device.led_heartbeat_disabled);
       break;
 
     case meshtastic_Config_position_tag:
-      d("Config:position_tag:  position_broadcast_secs: %d\r\n", config->payload_variant.position.position_broadcast_secs);
-      d("Config:position_tag:  position_broadcast_smart_enabled: %d\r\n", config->payload_variant.position.position_broadcast_smart_enabled);
-      d("Config:position_tag:  fixed_position: %d\r\n", config->payload_variant.position.fixed_position);
-      d("Config:position_tag:  gps_enabled: %d\r\n", config->payload_variant.position.gps_enabled);
-      d("Config:position_tag:  gps_update_interval: %d\r\n", config->payload_variant.position.gps_update_interval);
-      d("Config:position_tag:  gps_attempt_time: %d\r\n", config->payload_variant.position.gps_attempt_time);
-      d("Config:position_tag:  position_flags: %d\r\n", config->payload_variant.position.position_flags);
-      d("Config:position_tag:  rx_gpio: %d\r\n", config->payload_variant.position.rx_gpio);
-      d("Config:position_tag:  tx_gpio: %d\r\n", config->payload_variant.position.tx_gpio);
-      d("Config:position_tag:  broadcast_smart_min_distance: %d\r\n", config->payload_variant.position.broadcast_smart_minimum_distance);
-      d("Config:position_tag:  broadcast_smart_min_interval_secs: %d\r\n", config->payload_variant.position.broadcast_smart_minimum_interval_secs);
-      d("Config:position_tag:  gps_en_gpio: %d\r\n", config->payload_variant.position.gps_en_gpio);
-      d("Config:position_tag:  gps_mode %d\r\n", config->payload_variant.position.gps_mode);
+      D("Config:position_tag:  position_broadcast_secs: %" D_CRLF, config->payload_variant.position.position_broadcast_secs);
+      D("Config:position_tag:  position_broadcast_smart_enabled: %" D_CRLF, config->payload_variant.position.position_broadcast_smart_enabled);
+      D("Config:position_tag:  fixed_position: %" D_CRLF, config->payload_variant.position.fixed_position);
+      D("Config:position_tag:  gps_enabled: %" D_CRLF, config->payload_variant.position.gps_enabled);
+      D("Config:position_tag:  gps_update_interval: %" D_CRLF, config->payload_variant.position.gps_update_interval);
+      D("Config:position_tag:  gps_attempt_time: %" D_CRLF, config->payload_variant.position.gps_attempt_time);
+      D("Config:position_tag:  position_flags: %" D_CRLF, config->payload_variant.position.position_flags);
+      D("Config:position_tag:  rx_gpio: %" D_CRLF, config->payload_variant.position.rx_gpio);
+      D("Config:position_tag:  tx_gpio: %" D_CRLF, config->payload_variant.position.tx_gpio);
+      D("Config:position_tag:  broadcast_smart_min_distance: %" D_CRLF, config->payload_variant.position.broadcast_smart_minimum_distance);
+      D("Config:position_tag:  broadcast_smart_min_interval_secs: %" D_CRLF, config->payload_variant.position.broadcast_smart_minimum_interval_secs);
+      D("Config:position_tag:  gps_en_gpio: %" D_CRLF, config->payload_variant.position.gps_en_gpio);
+      D("Config:position_tag:  gps_mode %" D_CRLF, config->payload_variant.position.gps_mode);
       break;
 
-    case meshtastic_Config_power_tag: 
-      d("Config:power_tag:  is_power_saving %d\r\n", config->payload_variant.power.is_power_saving);
-      d("Config:power_tag:  on_battery_shutdown_after_secs %d\r\n", config->payload_variant.power.on_battery_shutdown_after_secs);
-      d("Config:power_tag:  adv_multiplier_override %f\r\n", config->payload_variant.power.adc_multiplier_override);
-      d("Config:power_tag:  wait_bluetooth_secs %d\r\n", config->payload_variant.power.wait_bluetooth_secs);
-      d("Config:power_tag:  sds_secs %d\r\n", config->payload_variant.power.sds_secs);
-      d("Config:power_tag:  ls_secs %d\r\n", config->payload_variant.power.ls_secs);
-      d("Config:power_tag:  min_wake_secs %d\r\n", config->payload_variant.power.min_wake_secs);
-      d("Config:power_tag:  device_battery_ina_aaddr %d\r\n", config->payload_variant.power.device_battery_ina_address);
-      d("Config:power_tag:  powermon_enables %d\r\n", config->payload_variant.power.powermon_enables);
+    case meshtastic_Config_power_tag:
+      D("Config:power_tag:  is_power_saving %" D_CRLF, config->payload_variant.power.is_power_saving);
+      D("Config:power_tag:  on_battery_shutdown_after_secs %" D_CRLF, config->payload_variant.power.on_battery_shutdown_after_secs);
+      D("Config:power_tag:  adv_multiplier_override %" D_CRLF, config->payload_variant.power.adc_multiplier_override);
+      D("Config:power_tag:  wait_bluetooth_secs %" D_CRLF, config->payload_variant.power.wait_bluetooth_secs);
+      D("Config:power_tag:  sds_secs %" D_CRLF, config->payload_variant.power.sds_secs);
+      D("Config:power_tag:  ls_secs %" D_CRLF, config->payload_variant.power.ls_secs);
+      D("Config:power_tag:  min_wake_secs %" D_CRLF, config->payload_variant.power.min_wake_secs);
+      D("Config:power_tag:  device_battery_ina_aaddr %" D_CRLF, config->payload_variant.power.device_battery_ina_address);
+      D("Config:power_tag:  powermon_enables %" D_CRLF, config->payload_variant.power.powermon_enables);
       break;
 
     case meshtastic_Config_network_tag:
-      d("Config:network_tag:wifi_enabled: %d  \r\n", config->payload_variant.network.wifi_enabled);
-      d("Config:network_tag:wifi_ssid: %s  \r\n", config->payload_variant.network.wifi_ssid);
-      d("Config:network_tag:wifi_psk: %s  \r\n", config->payload_variant.network.wifi_psk);
-      d("Config:network_tag:ntp_server: %s  \r\n", config->payload_variant.network.ntp_server);
-      d("Config:network_tag:eth_enabled: %d  \r\n", config->payload_variant.network.eth_enabled);
-      d("Config:network_tag:addr_mode: %d  \r\n", config->payload_variant.network.address_mode);
-      d("Config:network_tag:has_ipv4_config: %d  \r\n", config->payload_variant.network.has_ipv4_config);
-      d("Config:network_tag:ipv4_config: %d  \r\n", config->payload_variant.network.ipv4_config);
-      d("Config:network_tag:rsyslog_server: %s  \r\n", config->payload_variant.network.rsyslog_server);
+      D("Config:network_tag:wifi_enabled: %d " D_CRLF, config->payload_variant.network.wifi_enabled);
+      D("Config:network_tag:wifi_ssid: %s " D_CRLF, config->payload_variant.network.wifi_ssid);
+      D("Config:network_tag:wifi_psk: %s " D_CRLF, config->payload_variant.network.wifi_psk);
+      D("Config:network_tag:ntp_server: %s " D_CRLF, config->payload_variant.network.ntp_server);
+      D("Config:network_tag:eth_enabled: %d " D_CRLF, config->payload_variant.network.eth_enabled);
+      D("Config:network_tag:addr_mode: %d " D_CRLF, config->payload_variant.network.address_mode);
+      D("Config:network_tag:has_ipv4_config: %d " D_CRLF, config->payload_variant.network.has_ipv4_config);
+      D("Config:network_tag:ipv4_config: %d " D_CRLF, config->payload_variant.network.ipv4_config);
+      D("Config:network_tag:rsyslog_server: %s " D_CRLF, config->payload_variant.network.rsyslog_server);
       break;
 
-    case meshtastic_Config_display_tag: 
-      d("Config:display_tag:screen_on_seconds: %d  \r\n", config->payload_variant.display.screen_on_secs);
-      d("Config:display_tag:gps_format: %d  \r\n", config->payload_variant.display.gps_format);
-      d("Config:display_tag:auto_screen_carousel_secs: %d  \r\n", config->payload_variant.display.auto_screen_carousel_secs);
-      d("Config:display_tag:compass_north_top: %d  \r\n", config->payload_variant.display.compass_north_top);
-      d("Config:display_tag:flip_screen: %d  \r\n", config->payload_variant.display.flip_screen);
-      d("Config:display_tag:units: %d  \r\n", config->payload_variant.display.units);
-      d("Config:display_tag:oled: %d  \r\n", config->payload_variant.display.oled);
-      d("Config:display_tag:displayMode: %d  \r\n", config->payload_variant.display.displaymode);
-      d("Config:display_tag:heading_bold: %d  \r\n", config->payload_variant.display.heading_bold);
-      d("Config:display_tag:wake_on_tap_or_motion: %d  \r\n", config->payload_variant.display.wake_on_tap_or_motion);
-      d("Config:display_tag:compass_orientation: %d  \r\n", config->payload_variant.display.compass_orientation);
+    case meshtastic_Config_display_tag:
+      D("Config:display_tag:screen_on_seconds: %d " D_CRLF, config->payload_variant.display.screen_on_secs);
+      D("Config:display_tag:gps_format: %d " D_CRLF, config->payload_variant.display.gps_format);
+      D("Config:display_tag:auto_screen_carousel_secs: %d " D_CRLF, config->payload_variant.display.auto_screen_carousel_secs);
+      D("Config:display_tag:compass_north_top: %d " D_CRLF, config->payload_variant.display.compass_north_top);
+      D("Config:display_tag:flip_screen: %d " D_CRLF, config->payload_variant.display.flip_screen);
+      D("Config:display_tag:units: %d " D_CRLF, config->payload_variant.display.units);
+      D("Config:display_tag:oled: %d " D_CRLF, config->payload_variant.display.oled);
+      D("Config:display_tag:displayMode: %d " D_CRLF, config->payload_variant.display.displaymode);
+      D("Config:display_tag:heading_bold: %d " D_CRLF, config->payload_variant.display.heading_bold);
+      D("Config:display_tag:wake_on_tap_or_motion: %d " D_CRLF, config->payload_variant.display.wake_on_tap_or_motion);
+      D("Config:display_tag:compass_orientation: %d " D_CRLF, config->payload_variant.display.compass_orientation);
       break;
 
     case meshtastic_Config_lora_tag:
-      d("Config:lora_tag:use_preset: %d  \r\n", config->payload_variant.lora.use_preset);
-      d("Config:lora_tag:modem_preset: %d  \r\n", config->payload_variant.lora.modem_preset);
-      d("Config:lora_tag:bandwidth: %d  \r\n", config->payload_variant.lora.bandwidth);
-      d("Config:lora_tag:spread_factor: %d  \r\n", config->payload_variant.lora.spread_factor);
-      d("Config:lora_tag:coding_rate: %d  \r\n", config->payload_variant.lora.coding_rate);
-      d("Config:lora_tag:frequency_offset: %d  \r\n", config->payload_variant.lora.frequency_offset);
-      d("Config:lora_tag:region: %d  \r\n", config->payload_variant.lora.region);
-      d("Config:lora_tag:hot_limit: %d  \r\n", config->payload_variant.lora.hop_limit);
-      d("Config:lora_tag:tx_enabled: %d  \r\n", config->payload_variant.lora.tx_enabled);
-      d("Config:lora_tag:tx_power: %d  \r\n", config->payload_variant.lora.tx_power);
-      d("Config:lora_tag:channel_num: %d  \r\n", config->payload_variant.lora.channel_num);
-      d("Config:lora_tag:override_duty_cycle: %d  \r\n", config->payload_variant.lora.override_duty_cycle);
-      d("Config:lora_tag:sx126x_rx_boosted_gain: %d  \r\n", config->payload_variant.lora.sx126x_rx_boosted_gain);
-      d("Config:lora_tag:override_frequency: %d  \r\n", config->payload_variant.lora.override_frequency);
-      d("Config:lora_tag:pa_fan_disabled: %d  \r\n", config->payload_variant.lora.pa_fan_disabled);
-      d("Config:lora_tag:ignore_incoming_count: %d  \r\n", config->payload_variant.lora.ignore_incoming_count);
-      d("Config:lora_tag:ignore_mqtt: %d  \r\n", config->payload_variant.lora.ignore_mqtt);
-      d("Config:lora_tag:config_okay_to_mqtt: %d  \r\n", config->payload_variant.lora.config_ok_to_mqtt);
+      D("Config:lora_tag:use_preset: %d " D_CRLF, config->payload_variant.lora.use_preset);
+      D("Config:lora_tag:modem_preset: %d " D_CRLF, config->payload_variant.lora.modem_preset);
+      D("Config:lora_tag:bandwidth: %d " D_CRLF, config->payload_variant.lora.bandwidth);
+      D("Config:lora_tag:spread_factor: %d " D_CRLF, config->payload_variant.lora.spread_factor);
+      D("Config:lora_tag:coding_rate: %d " D_CRLF, config->payload_variant.lora.coding_rate);
+      D("Config:lora_tag:frequency_offset: %d " D_CRLF, config->payload_variant.lora.frequency_offset);
+      D("Config:lora_tag:region: %d " D_CRLF, config->payload_variant.lora.region);
+      D("Config:lora_tag:hot_limit: %d " D_CRLF, config->payload_variant.lora.hop_limit);
+      D("Config:lora_tag:tx_enabled: %d " D_CRLF, config->payload_variant.lora.tx_enabled);
+      D("Config:lora_tag:tx_power: %d " D_CRLF, config->payload_variant.lora.tx_power);
+      D("Config:lora_tag:channel_num: %d " D_CRLF, config->payload_variant.lora.channel_num);
+      D("Config:lora_tag:override_duty_cycle: %d " D_CRLF, config->payload_variant.lora.override_duty_cycle);
+      D("Config:lora_tag:sx126x_rx_boosted_gain: %d " D_CRLF, config->payload_variant.lora.sx126x_rx_boosted_gain);
+      D("Config:lora_tag:override_frequency: %d " D_CRLF, config->payload_variant.lora.override_frequency);
+      D("Config:lora_tag:pa_fan_disabled: %d " D_CRLF, config->payload_variant.lora.pa_fan_disabled);
+      D("Config:lora_tag:ignore_incoming_count: %d " D_CRLF, config->payload_variant.lora.ignore_incoming_count);
+      D("Config:lora_tag:ignore_mqtt: %d " D_CRLF, config->payload_variant.lora.ignore_mqtt);
+      D("Config:lora_tag:config_okay_to_mqtt: %d " D_CRLF, config->payload_variant.lora.config_ok_to_mqtt);
       break;
 
-    case meshtastic_Config_bluetooth_tag: 
-      d("Config:bluetooth_tag:enabled: %d  \r\n", config->payload_variant.bluetooth.enabled);
-      d("Config:bluetooth_tag:fixed_pin: %d  \r\n", config->payload_variant.bluetooth.fixed_pin);
-      d("Config:bluetooth_tag:mode: %d  \r\n", config->payload_variant.bluetooth.mode);
+    case meshtastic_Config_bluetooth_tag:
+      D("Config:bluetooth_tag:enabled: %d " D_CRLF, config->payload_variant.bluetooth.enabled);
+      D("Config:bluetooth_tag:fixed_pin: %d " D_CRLF, config->payload_variant.bluetooth.fixed_pin);
+      D("Config:bluetooth_tag:mode: %d " D_CRLF, config->payload_variant.bluetooth.mode);
       break;
 
-    case meshtastic_Config_security_tag: 
-      d("Config:security_tag:is_managed: %d \r\n", config->payload_variant.security.is_managed);
-      d("Config:security_tag:public_key: %x \r\n", config->payload_variant.security.public_key);
-      d("Config:security_tag:private_key: %x \r\n", config->payload_variant.security.private_key);
-      d("Config:security_tag:admin_key_count: %x \r\n", config->payload_variant.security.admin_key_count);
-      d("Config:security_tag:serial_enabled: %x \r\n", config->payload_variant.security.serial_enabled);
-      d("Config:security_tag:debug_log_api_enabled: %x \r\n", config->payload_variant.security.debug_log_api_enabled);
-      d("Config:security_tag:admin_channel_enabled: %x \r\n", config->payload_variant.security.admin_channel_enabled);
+    case meshtastic_Config_security_tag:
+      D("Config:security_tag:is_managed: %d" D_CRLF, config->payload_variant.security.is_managed);
+      D("Config:security_tag:public_key: %x" D_CRLF, config->payload_variant.security.public_key);
+      D("Config:security_tag:private_key: %x" D_CRLF, config->payload_variant.security.private_key);
+      D("Config:security_tag:admin_key_count: %x" D_CRLF, config->payload_variant.security.admin_key_count);
+      D("Config:security_tag:serial_enabled: %x" D_CRLF, config->payload_variant.security.serial_enabled);
+      D("Config:security_tag:debug_log_api_enabled: %x" D_CRLF, config->payload_variant.security.debug_log_api_enabled);
+      D("Config:security_tag:admin_channel_enabled: %x" D_CRLF, config->payload_variant.security.admin_channel_enabled);
       break;
 
-    case meshtastic_Config_sessionkey_tag: 
-      d("Config:sessionkey_tag:dummy_field: %x \r\n", config->payload_variant.sessionkey.dummy_field);
+    case meshtastic_Config_sessionkey_tag:
+      D("Config:sessionkey_tag:dummy_field: %x" D_CRLF, config->payload_variant.sessionkey.dummy_field);
       break;
 
     case meshtastic_Config_device_ui_tag:
-      d("Config.device_ui:alert_enabled: %d\r\n", config->payload_variant.device_ui.alert_enabled);
-      d("Config.device_ui:banner_enabled: %d\r\n", config->payload_variant.device_ui.banner_enabled);
-      d("Config.device_ui:has_node_filter: %d\r\n", config->payload_variant.device_ui.has_node_filter);
-      d("Config.device_ui:has_node_highlight: %d\r\n", config->payload_variant.device_ui.has_node_highlight);
-      d("Config.device_ui:language: %d\r\n", config->payload_variant.device_ui.language);
-      d("Config.device_ui:node_filter: %d\r\n", config->payload_variant.device_ui.node_filter);
-      d("Config.device_ui:node_highlight: %d\r\n", config->payload_variant.device_ui.node_highlight);
-      d("Config.device_ui:pin_code: %d\r\n", config->payload_variant.device_ui.pin_code);
-      d("Config.device_ui:ring_tone_id: %d\r\n", config->payload_variant.device_ui.ring_tone_id);
-      d("Config.device_ui:screen_brightness: %d\r\n", config->payload_variant.device_ui.screen_brightness);
-      d("Config.device_ui:screen_lock: %d\r\n", config->payload_variant.device_ui.screen_lock);
-      d("Config.device_ui:screen_timeout: %d\r\n", config->payload_variant.device_ui.screen_timeout);
+      D("Config.device_ui:alert_enabled: %" D_CRLF, config->payload_variant.device_ui.alert_enabled);
+      D("Config.device_ui:banner_enabled: %" D_CRLF, config->payload_variant.device_ui.banner_enabled);
+      D("Config.device_ui:has_node_filter: %" D_CRLF, config->payload_variant.device_ui.has_node_filter);
+      D("Config.device_ui:has_node_highlight: %" D_CRLF, config->payload_variant.device_ui.has_node_highlight);
+      D("Config.device_ui:language: %" D_CRLF, config->payload_variant.device_ui.language);
+      D("Config.device_ui:node_filter: %" D_CRLF, config->payload_variant.device_ui.node_filter);
+      D("Config.device_ui:node_highlight: %" D_CRLF, config->payload_variant.device_ui.node_highlight);
+      D("Config.device_ui:pin_code: %" D_CRLF, config->payload_variant.device_ui.pin_code);
+      D("Config.device_ui:ring_tone_id: %" D_CRLF, config->payload_variant.device_ui.ring_tone_id);
+      D("Config.device_ui:screen_brightness: %" D_CRLF, config->payload_variant.device_ui.screen_brightness);
+      D("Config.device_ui:screen_lock: %" D_CRLF, config->payload_variant.device_ui.screen_lock);
+      D("Config.device_ui:screen_timeout: %" D_CRLF, config->payload_variant.device_ui.screen_timeout);
       break;
 
     default:
+#if defined(ESP_PLATFORM)
+      ESP_LOGW("Meshtastic", "Unknown Config_Tag payload variant: %d", config->which_payload_variant);
+#else
       d("Unknown Config_Tag payload variant: %d\r\n", config->which_payload_variant);
+#endif
   }
   return true;
 }
 
 bool handle_channel_tag(meshtastic_Channel *channel) {
-  d("ChannelTag:index: %d\r\n", channel->index);
-  d("ChannelTag:has_settings: %d\r\n", channel->has_settings);
-  d("ChannelTag:role: %d\r\n", channel->role);
+  D("ChannelTag:index: %d" D_CRLF, channel->index);
+  D("ChannelTag:has_settings: %d" D_CRLF, channel->has_settings);
+  D("ChannelTag:role: %d" D_CRLF, channel->role);
   return true;
 }
 
 bool handle_FromRadio_log_record_tag(meshtastic_LogRecord *record) {
-  d("FromRadio_log_record:message: %s\r\n", record->message);
-  d("FromRadio_log_record:time: %d\r\n", record->time);
-  d("FromRadio_log_record:source: %s\r\n", record->source);
-  d("FromRadio_log_record:level: %s\r\n", record->level);
+  D("FromRadio_log_record:message: %s" D_CRLF, record->message);
+  D("FromRadio_log_record:time: %d" D_CRLF, record->time);
+  D("FromRadio_log_record:source: %s" D_CRLF, record->source);
+  D("FromRadio_log_record:level: %s" D_CRLF, record->level);
   return true;
 }
 
-bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){ 
+bool handle_moduleConfig_tag(meshtastic_ModuleConfig *module){
   switch (module->which_payload_variant) {
       case meshtastic_ModuleConfig_mqtt_tag:
-      d("ModuleConfig:mqtt:enabled: %d\r\n", module->payload_variant.mqtt.enabled);
-      d("ModuleConfig:mqtt:address: %s\r\n", module->payload_variant.mqtt.address);
-      d("ModuleConfig:mqtt:username: %s\r\n", module->payload_variant.mqtt.username);
-      d("ModuleConfig:mqtt:password: %s\r\n", module->payload_variant.mqtt.password);
-      d("ModuleConfig:mqtt:encryption_enabled: %d\r\n", module->payload_variant.mqtt.encryption_enabled);
-      d("ModuleConfig:mqtt:json_enabled: %d\r\n", module->payload_variant.mqtt.json_enabled);
-      d("ModuleConfig:mqtt:root: %s\r\n", module->payload_variant.mqtt.root);
-      d("ModuleConfig:mqtt:proxy_to_client_enabled: %d\r\n", module->payload_variant.mqtt.proxy_to_client_enabled);
-      d("ModuleConfig:mqtt:map_reporting_enabled %d\r\n", module->payload_variant.mqtt.map_report_settings);
-      d("ModuleConfig:mqtt:has_map_report_settings %d\r\n", module->payload_variant.mqtt.has_map_report_settings);
+      D("ModuleConfig:mqtt:enabled: %d" D_CRLF, module->payload_variant.mqtt.enabled);
+      D("ModuleConfig:mqtt:address: %s" D_CRLF, module->payload_variant.mqtt.address);
+      D("ModuleConfig:mqtt:username: %s" D_CRLF, module->payload_variant.mqtt.username);
+      D("ModuleConfig:mqtt:password: %s" D_CRLF, module->payload_variant.mqtt.password);
+      D("ModuleConfig:mqtt:encryption_enabled: %d" D_CRLF, module->payload_variant.mqtt.encryption_enabled);
+      D("ModuleConfig:mqtt:json_enabled: %d" D_CRLF, module->payload_variant.mqtt.json_enabled);
+      D("ModuleConfig:mqtt:root: %s" D_CRLF, module->payload_variant.mqtt.root);
+      D("ModuleConfig:mqtt:proxy_to_client_enabled: %d" D_CRLF, module->payload_variant.mqtt.proxy_to_client_enabled);
+      D("ModuleConfig:mqtt:map_reporting_enabled %d" D_CRLF, module->payload_variant.mqtt.map_report_settings);
+      D("ModuleConfig:mqtt:has_map_report_settings %d" D_CRLF, module->payload_variant.mqtt.has_map_report_settings);
       break;
 
       case meshtastic_ModuleConfig_serial_tag:
-        d("ModuleConfig:serial:enabled: %d\r\n", module->payload_variant.serial.enabled);
-        d("ModuleConfig:serial:echo: %d\r\n", module->payload_variant.serial.echo);
-        d("ModuleConfig:serial:rxd-gpio-pin: %d\r\n", module->payload_variant.serial.rxd);
-        d("ModuleConfig:serial:txd-gpio-pin: %d\r\n", module->payload_variant.serial.txd);
-        d("ModuleConfig:serial:baud: %d\r\n", module->payload_variant.serial.baud);
-        d("ModuleConfig:serial:timeout: %d\r\n", module->payload_variant.serial.timeout);
-        d("ModuleConfig:serial:mode: %d\r\n", module->payload_variant.serial.mode);
-        d("ModuleConfig:serial:override_console_serial_port: %d\r\n", module->payload_variant.serial.override_console_serial_port);
+        D("ModuleConfig:serial:enabled: %d" D_CRLF, module->payload_variant.serial.enabled);
+        D("ModuleConfig:serial:echo: %d" D_CRLF, module->payload_variant.serial.echo);
+        D("ModuleConfig:serial:rxd-gpio-pin: %d" D_CRLF, module->payload_variant.serial.rxd);
+        D("ModuleConfig:serial:txd-gpio-pin: %d" D_CRLF, module->payload_variant.serial.txd);
+        D("ModuleConfig:serial:baud: %d" D_CRLF, module->payload_variant.serial.baud);
+        D("ModuleConfig:serial:timeout: %d" D_CRLF, module->payload_variant.serial.timeout);
+        D("ModuleConfig:serial:mode: %d" D_CRLF, module->payload_variant.serial.mode);
+        D("ModuleConfig:serial:override_console_serial_port: %d" D_CRLF, module->payload_variant.serial.override_console_serial_port);
       break;
 
       case meshtastic_ModuleConfig_external_notification_tag:
-        d("ModuleConfig:external_notification:enabled: %d\r\n", module->payload_variant.external_notification.enabled);
-        d("ModuleConfig:external_notification:output_ms: %d\r\n", module->payload_variant.external_notification.output_ms);
-        d("ModuleConfig:external_notification:output: %d\r\n", module->payload_variant.external_notification.output);
-        d("ModuleConfig:external_notification:active: %d\r\n", module->payload_variant.external_notification.active);
-        d("ModuleConfig:external_notification:alert_message: %d\r\n", module->payload_variant.external_notification.alert_message);
-        d("ModuleConfig:external_notification:alert_bell: %d\r\n", module->payload_variant.external_notification.alert_bell);
-        d("ModuleConfig:external_notification:use_pwm: %d\r\n", module->payload_variant.external_notification.use_pwm);
-        d("ModuleConfig:external_notification:output_vibra: %d\r\n", module->payload_variant.external_notification.output_vibra);
-        d("ModuleConfig:external_notification:output_buzzer: %d\r\n", module->payload_variant.external_notification.output_buzzer);
-        d("ModuleConfig:external_notification:alert_message_vibra: %d\r\n", module->payload_variant.external_notification.alert_message_vibra);
-        d("ModuleConfig:external_notification:alert_message_buzzer: %d\r\n", module->payload_variant.external_notification.alert_message_buzzer);
-        d("ModuleConfig:external_notification:alert_bell_vibra: %d\r\n", module->payload_variant.external_notification.alert_bell_vibra);
-        d("ModuleConfig:external_notification:alert_bell_buzzer: %d\r\n", module->payload_variant.external_notification.alert_bell_buzzer);
-        d("ModuleConfig:external_notification:nag_timeout: %d\r\n", module->payload_variant.external_notification.nag_timeout);
-        d("ModuleConfig:external_notification:use_i2s_as_buzzer: %d\r\n", module->payload_variant.external_notification.use_i2s_as_buzzer);
+        D("ModuleConfig:external_notification:enabled: %d" D_CRLF, module->payload_variant.external_notification.enabled);
+        D("ModuleConfig:external_notification:output_ms: %d" D_CRLF, module->payload_variant.external_notification.output_ms);
+        D("ModuleConfig:external_notification:output: %d" D_CRLF, module->payload_variant.external_notification.output);
+        D("ModuleConfig:external_notification:active: %d" D_CRLF, module->payload_variant.external_notification.active);
+        D("ModuleConfig:external_notification:alert_message: %d" D_CRLF, module->payload_variant.external_notification.alert_message);
+        D("ModuleConfig:external_notification:alert_bell: %d" D_CRLF, module->payload_variant.external_notification.alert_bell);
+        D("ModuleConfig:external_notification:use_pwm: %d" D_CRLF, module->payload_variant.external_notification.use_pwm);
+        D("ModuleConfig:external_notification:output_vibra: %d" D_CRLF, module->payload_variant.external_notification.output_vibra);
+        D("ModuleConfig:external_notification:output_buzzer: %d" D_CRLF, module->payload_variant.external_notification.output_buzzer);
+        D("ModuleConfig:external_notification:alert_message_vibra: %d" D_CRLF, module->payload_variant.external_notification.alert_message_vibra);
+        D("ModuleConfig:external_notification:alert_message_buzzer: %d" D_CRLF, module->payload_variant.external_notification.alert_message_buzzer);
+        D("ModuleConfig:external_notification:alert_bell_vibra: %d" D_CRLF, module->payload_variant.external_notification.alert_bell_vibra);
+        D("ModuleConfig:external_notification:alert_bell_buzzer: %d" D_CRLF, module->payload_variant.external_notification.alert_bell_buzzer);
+        D("ModuleConfig:external_notification:nag_timeout: %d" D_CRLF, module->payload_variant.external_notification.nag_timeout);
+        D("ModuleConfig:external_notification:use_i2s_as_buzzer: %d" D_CRLF, module->payload_variant.external_notification.use_i2s_as_buzzer);
       break;
 
       case meshtastic_ModuleConfig_store_forward_tag:
-        d("ModuleConfig:store_forward:enabled: %d\r\n", module->payload_variant.store_forward.enabled);
-        d("ModuleConfig:store_forward:heartbeat: %d\r\n", module->payload_variant.store_forward.heartbeat);
-        d("ModuleConfig:store_forward:history_return_max: %d\r\n", module->payload_variant.store_forward.history_return_max);
-        d("ModuleConfig:store_forward:history_return_window: %d\r\n", module->payload_variant.store_forward.history_return_window);
-        d("ModuleConfig:store_forward:is_server: %d\r\n", module->payload_variant.store_forward.is_server);
-        d("ModuleConfig:store_forward:records: %d\r\n", module->payload_variant.store_forward.records);
+        D("ModuleConfig:store_forward:enabled: %d" D_CRLF, module->payload_variant.store_forward.enabled);
+        D("ModuleConfig:store_forward:heartbeat: %d" D_CRLF, module->payload_variant.store_forward.heartbeat);
+        D("ModuleConfig:store_forward:history_return_max: %d" D_CRLF, module->payload_variant.store_forward.history_return_max);
+        D("ModuleConfig:store_forward:history_return_window: %d" D_CRLF, module->payload_variant.store_forward.history_return_window);
+        D("ModuleConfig:store_forward:is_server: %d" D_CRLF, module->payload_variant.store_forward.is_server);
+        D("ModuleConfig:store_forward:records: %d" D_CRLF, module->payload_variant.store_forward.records);
       break;
 
-      case meshtastic_ModuleConfig_range_test_tag: 
-        d("ModuleConfig:range_test:enabled: %d\r\n", module->payload_variant.range_test.enabled);
-        d("ModuleConfig:range_test:save: %d\r\n", module->payload_variant.range_test.save);
-        d("ModuleConfig:range_test:sender: %d\r\n", module->payload_variant.range_test.sender);
+      case meshtastic_ModuleConfig_range_test_tag:
+        D("ModuleConfig:range_test:enabled: %d" D_CRLF, module->payload_variant.range_test.enabled);
+        D("ModuleConfig:range_test:save: %d" D_CRLF, module->payload_variant.range_test.save);
+        D("ModuleConfig:range_test:sender: %d" D_CRLF, module->payload_variant.range_test.sender);
       break;
 
       case meshtastic_ModuleConfig_telemetry_tag:
-        d("ModuleConfig:telemetry:air_quality_enabled: %d\r\n", module->payload_variant.telemetry.air_quality_enabled);
-        d("ModuleConfig:telemetry:air_quality_interval: %d\r\n", module->payload_variant.telemetry.air_quality_interval);
-        d("ModuleConfig:telemetry:device_update_interval: %d\r\n", module->payload_variant.telemetry.device_update_interval);
-        d("ModuleConfig:telemetry:environment_display_fahrenheit: %d\r\n", module->payload_variant.telemetry.environment_display_fahrenheit);
-        d("ModuleConfig:telemetry:environment_measurement_enabled: %d\r\n", module->payload_variant.telemetry.environment_measurement_enabled);
-        d("ModuleConfig:telemetry:environment_screen_enabled: %d\r\n", module->payload_variant.telemetry.environment_screen_enabled);
-        d("ModuleConfig:telemetry:environment_update_interval: %d\r\n", module->payload_variant.telemetry.environment_update_interval);
-        d("ModuleConfig:telemetry:health_measurement_enabled: %d\r\n", module->payload_variant.telemetry.health_measurement_enabled);
-        d("ModuleConfig:telemetry:health_screen_enabled: %d\r\n", module->payload_variant.telemetry.health_screen_enabled);
-        d("ModuleConfig:telemetry:health_update_interval: %d\r\n", module->payload_variant.telemetry.health_update_interval);
-        d("ModuleConfig:telemetry:power_measurement_enabled: %d\r\n", module->payload_variant.telemetry.power_measurement_enabled);
-        d("ModuleConfig:telemetry:power_update_interval: %d\r\n", module->payload_variant.telemetry.power_update_interval);
+        D("ModuleConfig:telemetry:air_quality_enabled: %d" D_CRLF, module->payload_variant.telemetry.air_quality_enabled);
+        D("ModuleConfig:telemetry:air_quality_interval: %d" D_CRLF, module->payload_variant.telemetry.air_quality_interval);
+        D("ModuleConfig:telemetry:device_update_interval: %d" D_CRLF, module->payload_variant.telemetry.device_update_interval);
+        D("ModuleConfig:telemetry:environment_display_fahrenheit: %d" D_CRLF, module->payload_variant.telemetry.environment_display_fahrenheit);
+        D("ModuleConfig:telemetry:environment_measurement_enabled: %d" D_CRLF, module->payload_variant.telemetry.environment_measurement_enabled);
+        D("ModuleConfig:telemetry:environment_screen_enabled: %d" D_CRLF, module->payload_variant.telemetry.environment_screen_enabled);
+        D("ModuleConfig:telemetry:environment_update_interval: %d" D_CRLF, module->payload_variant.telemetry.environment_update_interval);
+        D("ModuleConfig:telemetry:health_measurement_enabled: %d" D_CRLF, module->payload_variant.telemetry.health_measurement_enabled);
+        D("ModuleConfig:telemetry:health_screen_enabled: %d" D_CRLF, module->payload_variant.telemetry.health_screen_enabled);
+        D("ModuleConfig:telemetry:health_update_interval: %d" D_CRLF, module->payload_variant.telemetry.health_update_interval);
+        D("ModuleConfig:telemetry:power_measurement_enabled: %d" D_CRLF, module->payload_variant.telemetry.power_measurement_enabled);
+        D("ModuleConfig:telemetry:power_update_interval: %d" D_CRLF, module->payload_variant.telemetry.power_update_interval);
 
       break;
 
-      case meshtastic_ModuleConfig_canned_message_tag: 
-        d("ModuleConfig:canned_message:enabled: %d\r\n", module->payload_variant.canned_message.enabled);
-        d("ModuleConfig:canned_message:allow_input_source: %d\r\n", module->payload_variant.canned_message.allow_input_source);
-        d("ModuleConfig:canned_message:inputbroker_event_ccw: %d\r\n", module->payload_variant.canned_message.inputbroker_event_ccw);
-        d("ModuleConfig:canned_message:inputbroker_event_cw: %d\r\n", module->payload_variant.canned_message.inputbroker_event_cw);
-        d("ModuleConfig:canned_message:inputbroker_event_pass: %d\r\n", module->payload_variant.canned_message.inputbroker_event_press);
-        d("ModuleConfig:canned_message:inputbroker_pin_a: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_a);
-        d("ModuleConfig:canned_message:inputbroker_pin_b: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_b);
-        d("ModuleConfig:canned_message:inputbroker_pin_press: %d\r\n", module->payload_variant.canned_message.inputbroker_pin_press);
-        d("ModuleConfig:canned_message:rotary1_enabled: %d\r\n", module->payload_variant.canned_message.rotary1_enabled);
-        d("ModuleConfig:canned_message:send_bell: %d\r\n", module->payload_variant.canned_message.send_bell);
-        d("ModuleConfig:canned_message:updown1_enabled: %d\r\n", module->payload_variant.canned_message.updown1_enabled);
+      case meshtastic_ModuleConfig_canned_message_tag:
+        D("ModuleConfig:canned_message:enabled: %d" D_CRLF, module->payload_variant.canned_message.enabled);
+        D("ModuleConfig:canned_message:allow_input_source: %d" D_CRLF, module->payload_variant.canned_message.allow_input_source);
+        D("ModuleConfig:canned_message:inputbroker_event_ccw: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_event_ccw);
+        D("ModuleConfig:canned_message:inputbroker_event_cw: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_event_cw);
+        D("ModuleConfig:canned_message:inputbroker_event_pass: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_event_press);
+        D("ModuleConfig:canned_message:inputbroker_pin_a: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_pin_a);
+        D("ModuleConfig:canned_message:inputbroker_pin_b: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_pin_b);
+        D("ModuleConfig:canned_message:inputbroker_pin_press: %d" D_CRLF, module->payload_variant.canned_message.inputbroker_pin_press);
+        D("ModuleConfig:canned_message:rotary1_enabled: %d" D_CRLF, module->payload_variant.canned_message.rotary1_enabled);
+        D("ModuleConfig:canned_message:send_bell: %d" D_CRLF, module->payload_variant.canned_message.send_bell);
+        D("ModuleConfig:canned_message:updown1_enabled: %d" D_CRLF, module->payload_variant.canned_message.updown1_enabled);
       break;
 
-      case meshtastic_ModuleConfig_audio_tag: 
-        d("ModuleConfig:audio:codec2_enabled: %d\r\n", module->payload_variant.audio.codec2_enabled);
-        d("ModuleConfig:audio:bitrate: %d\r\n", module->payload_variant.audio.bitrate);
-        d("ModuleConfig:audio:i2s_din: %d\r\n", module->payload_variant.audio.i2s_din);
-        d("ModuleConfig:audio:i2s_sck: %d\r\n", module->payload_variant.audio.i2s_sck);
-        d("ModuleConfig:audio:i2s_sd: %d\r\n", module->payload_variant.audio.i2s_sd);
-        d("ModuleConfig:audio:i2s_ws: %d\r\n", module->payload_variant.audio.i2s_ws);
-        d("ModuleConfig:audio:ptt_pin: %d\r\n", module->payload_variant.audio.ptt_pin);
+      case meshtastic_ModuleConfig_audio_tag:
+        D("ModuleConfig:audio:codec2_enabled: %d" D_CRLF, module->payload_variant.audio.codec2_enabled);
+        D("ModuleConfig:audio:bitrate: %d" D_CRLF, module->payload_variant.audio.bitrate);
+        D("ModuleConfig:audio:i2s_din: %d" D_CRLF, module->payload_variant.audio.i2s_din);
+        D("ModuleConfig:audio:i2s_sck: %d" D_CRLF, module->payload_variant.audio.i2s_sck);
+        D("ModuleConfig:audio:i2s_sd: %d" D_CRLF, module->payload_variant.audio.i2s_sd);
+        D("ModuleConfig:audio:i2s_ws: %d" D_CRLF, module->payload_variant.audio.i2s_ws);
+        D("ModuleConfig:audio:ptt_pin: %d" D_CRLF, module->payload_variant.audio.ptt_pin);
       break;
 
-      case meshtastic_ModuleConfig_remote_hardware_tag: 
-        d("ModuleConfig:remote_hardware:enabled: %d\r\n", module->payload_variant.remote_hardware.enabled);
-        d("ModuleConfig:remote_hardware:allow_undefined_pin_access: %d\r\n", module->payload_variant.remote_hardware.allow_undefined_pin_access);
-        d("ModuleConfig:remote_hardware:available_pins: %d\r\n", module->payload_variant.remote_hardware.available_pins);
-        d("ModuleConfig:remote_hardware:available_pins_count: %d\r\n", module->payload_variant.remote_hardware.available_pins_count);
+      case meshtastic_ModuleConfig_remote_hardware_tag:
+        D("ModuleConfig:remote_hardware:enabled: %d" D_CRLF, module->payload_variant.remote_hardware.enabled);
+        D("ModuleConfig:remote_hardware:allow_undefined_pin_access: %d" D_CRLF, module->payload_variant.remote_hardware.allow_undefined_pin_access);
+        D("ModuleConfig:remote_hardware:available_pins: %d" D_CRLF, module->payload_variant.remote_hardware.available_pins);
+        D("ModuleConfig:remote_hardware:available_pins_count: %d" D_CRLF, module->payload_variant.remote_hardware.available_pins_count);
 
       break;
 
-      case meshtastic_ModuleConfig_neighbor_info_tag: 
-        d("ModuleConfig:neighbor_info:enabled: %d\r\n", module->payload_variant.neighbor_info.enabled);
-        d("ModuleConfig:neighbor_info:transmit_over_lora: %d\r\n", module->payload_variant.neighbor_info.transmit_over_lora);
-        d("ModuleConfig:neighbor_info:update_interval: %d\r\n", module->payload_variant.neighbor_info.update_interval);
+      case meshtastic_ModuleConfig_neighbor_info_tag:
+        D("ModuleConfig:neighbor_info:enabled: %d" D_CRLF, module->payload_variant.neighbor_info.enabled);
+        D("ModuleConfig:neighbor_info:transmit_over_lora: %d" D_CRLF, module->payload_variant.neighbor_info.transmit_over_lora);
+        D("ModuleConfig:neighbor_info:update_interval: %d" D_CRLF, module->payload_variant.neighbor_info.update_interval);
       break;
 
       case meshtastic_ModuleConfig_ambient_lighting_tag:
-        d("ModuleConfig:ambient_lighting:led_state: %d\r\n", module->payload_variant.ambient_lighting.led_state);
-        d("ModuleConfig:ambient_lighting:current: %d\r\n", module->payload_variant.ambient_lighting.current);
-        d("ModuleConfig:ambient_lighting:red: %d\r\n", module->payload_variant.ambient_lighting.red);
-        d("ModuleConfig:ambient_lighting:green: %d\r\n", module->payload_variant.ambient_lighting.green);
-        d("ModuleConfig:ambient_lighting:blue: %d\r\n", module->payload_variant.ambient_lighting.blue);
+        D("ModuleConfig:ambient_lighting:led_state: %d" D_CRLF, module->payload_variant.ambient_lighting.led_state);
+        D("ModuleConfig:ambient_lighting:current: %d" D_CRLF, module->payload_variant.ambient_lighting.current);
+        D("ModuleConfig:ambient_lighting:red: %d" D_CRLF, module->payload_variant.ambient_lighting.red);
+        D("ModuleConfig:ambient_lighting:green: %d" D_CRLF, module->payload_variant.ambient_lighting.green);
+        D("ModuleConfig:ambient_lighting:blue: %d" D_CRLF, module->payload_variant.ambient_lighting.blue);
       break;
 
-      case meshtastic_ModuleConfig_detection_sensor_tag: 
-        d("ModuleConfig:detection_sensor:enabled: %d\r\n", module->payload_variant.detection_sensor.enabled);
-        d("ModuleConfig:detection_sensor:detection_trigger_type: %d\r\n", module->payload_variant.detection_sensor.detection_trigger_type);
-        d("ModuleConfig:detection_sensor:min_broadcast_secs: %d\r\n", module->payload_variant.detection_sensor.minimum_broadcast_secs);
-        d("ModuleConfig:detection_sensor:monitor_pin: %d\r\n", module->payload_variant.detection_sensor.monitor_pin);
-        d("ModuleConfig:detection_sensor:name: %d\r\n", module->payload_variant.detection_sensor.name);
-        d("ModuleConfig:detection_sensor:send_bell: %d\r\n", module->payload_variant.detection_sensor.send_bell);
-        d("ModuleConfig:detection_sensor:state_broadcast_secs: %d\r\n", module->payload_variant.detection_sensor.state_broadcast_secs);
-        d("ModuleConfig:detection_sensor:use_pullup: %d\r\n", module->payload_variant.detection_sensor.use_pullup);
+      case meshtastic_ModuleConfig_detection_sensor_tag:
+        D("ModuleConfig:detection_sensor:enabled: %d" D_CRLF, module->payload_variant.detection_sensor.enabled);
+        D("ModuleConfig:detection_sensor:detection_trigger_type: %d" D_CRLF, module->payload_variant.detection_sensor.detection_trigger_type);
+        D("ModuleConfig:detection_sensor:min_broadcast_secs: %d" D_CRLF, module->payload_variant.detection_sensor.minimum_broadcast_secs);
+        D("ModuleConfig:detection_sensor:monitor_pin: %d" D_CRLF, module->payload_variant.detection_sensor.monitor_pin);
+        D("ModuleConfig:detection_sensor:name: %d" D_CRLF, module->payload_variant.detection_sensor.name);
+        D("ModuleConfig:detection_sensor:send_bell: %d" D_CRLF, module->payload_variant.detection_sensor.send_bell);
+        D("ModuleConfig:detection_sensor:state_broadcast_secs: %d" D_CRLF, module->payload_variant.detection_sensor.state_broadcast_secs);
+        D("ModuleConfig:detection_sensor:use_pullup: %d" D_CRLF, module->payload_variant.detection_sensor.use_pullup);
       break;
 
       case meshtastic_ModuleConfig_paxcounter_tag:
-        d("ModuleConfig:paxcounter:enabled: %d\r\n", module->payload_variant.paxcounter.enabled);
-        d("ModuleConfig:paxcounter:ble_threshold: %d\r\n", module->payload_variant.paxcounter.ble_threshold);
-        d("ModuleConfig:paxcounter:paxcounter_update_interval: %d\r\n", module->payload_variant.paxcounter.paxcounter_update_interval);
-        d("ModuleConfig:paxcounter:wifi_threshold: %d\r\n", module->payload_variant.paxcounter.wifi_threshold);
+        D("ModuleConfig:paxcounter:enabled: %d" D_CRLF, module->payload_variant.paxcounter.enabled);
+        D("ModuleConfig:paxcounter:ble_threshold: %d" D_CRLF, module->payload_variant.paxcounter.ble_threshold);
+        D("ModuleConfig:paxcounter:paxcounter_update_interval: %d" D_CRLF, module->payload_variant.paxcounter.paxcounter_update_interval);
+        D("ModuleConfig:paxcounter:wifi_threshold: %d" D_CRLF, module->payload_variant.paxcounter.wifi_threshold);
       break;
 
       default:
+#if defined(ESP_PLATFORM)
+        ESP_LOGW("Meshtastic", "Unknown payload variant: %d", module->which_payload_variant);
+#else
         d("Unknown payload variant: %d\r\n", module->which_payload_variant);
+#endif
   }
   return true;
 }
 
 bool handle_queueStatus_tag(meshtastic_QueueStatus *qstatus) {
-  d("queueStatus: maxlen: %d\r\n", qstatus->maxlen);
-  d("queueStatus: res: %d\r\n", qstatus->res);
-  d("queueStatus: free: %d\r\n", qstatus->free);
-  d("queueStatus: mesh_packet_id: %d\r\n", qstatus->mesh_packet_id);
+  D("queueStatus: maxlen: %d" D_CRLF, qstatus->maxlen);
+  D("queueStatus: res: %d" D_CRLF, qstatus->res);
+  D("queueStatus: free: %d" D_CRLF, qstatus->free);
+  D("queueStatus: mesh_packet_id: %d" D_CRLF, qstatus->mesh_packet_id);
   return true;
 }
 
 bool handle_xmodemPacket_tag(meshtastic_XModem *packet) {
-  d("XmodemPacket: XModem control #: %d\r\n", packet->control);
-  d("XmodemPacket: XModem sequence #: %d\r\n", packet->seq);
-  d("XmodemPacket: XModem crc16: %d\r\n", packet->crc16);
+  D("XmodemPacket: XModem control #: %d" D_CRLF, packet->control);
+  D("XmodemPacket: XModem sequence #: %d" D_CRLF, packet->seq);
+  D("XmodemPacket: XModem crc16: %d" D_CRLF, packet->crc16);
   return true;
 }
 
 bool handle_metatag_data(meshtastic_DeviceMetadata *meta) {
-  d("metatag_data:FW Version: %s\r\n", meta->firmware_version);
-  d("metatag_data:device_state_version: %d\r\n", meta->device_state_version);
-  d("metatag_data:canShutdown: %d\r\n", meta->canShutdown);
-  d("metatag_data:hasWiFi: %d\r\n", meta->hasWifi);
-  d("metatag_data:hasBluetooth: %d\r\n", meta->hasBluetooth);
-  d("metatag_data:hasEthernet: %d\r\n", meta->hasEthernet);
-  d("metatag_data:role: %d\r\n", meta->role);
-  d("metatag_data:positionFlags: %d\r\n", meta->position_flags);
-  d("metatag_data:hw_model: %d\r\n", meta->hw_model);
-  d("metatag_data:hasRemoteHardware: %d\r\n", meta->hasRemoteHardware);
-  d("metatag_data:excludedModules: %d\r\n", meta->excluded_modules);
+  D("metatag_data:FW Version: %s" D_CRLF, meta->firmware_version);
+  D("metatag_data:device_state_version: %d" D_CRLF, meta->device_state_version);
+  D("metatag_data:canShutdown: %d" D_CRLF, meta->canShutdown);
+  D("metatag_data:hasWiFi: %d" D_CRLF, meta->hasWifi);
+  D("metatag_data:hasBluetooth: %d" D_CRLF, meta->hasBluetooth);
+  D("metatag_data:hasEthernet: %d" D_CRLF, meta->hasEthernet);
+  D("metatag_data:role: %d" D_CRLF, meta->role);
+  D("metatag_data:positionFlags: %d" D_CRLF, meta->position_flags);
+  D("metatag_data:hw_model: %d" D_CRLF, meta->hw_model);
+  D("metatag_data:hasRemoteHardware: %d" D_CRLF, meta->hasRemoteHardware);
+  D("metatag_data:excludedModules: %d" D_CRLF, meta->excluded_modules);
   return true;
 }
 
 bool handle_mqttClientProxyMessage_tag(meshtastic_MqttClientProxyMessage *mqtt) {
-  d("mqttClientProxyMessage:Topic: %s\r\n", mqtt->topic);
+  D("mqttClientProxyMessage:Topic: %s" D_CRLF, mqtt->topic);
   switch (mqtt->which_payload_variant) {
     case meshtastic_MqttClientProxyMessage_data_tag:
       // TODO - INVALID d("mqttClientProxyMessage:data: %s\r\n", mqtt->payload_variant.data);
       break;
     case meshtastic_MqttClientProxyMessage_text_tag:
-      d("mqttClientProxyMessage:text %s\r\n", mqtt->payload_variant.text);
+      D("mqttClientProxyMessage:text %s" D_CRLF, mqtt->payload_variant.text);
       break;
   }
-  d("mqttClientProxyMessage:retained: %d\r\n", mqtt->retained);
+  D("mqttClientProxyMessage:retained: %d" D_CRLF, mqtt->retained);
   return true;
 }
 
 bool handle_fileInfo_tag(meshtastic_FileInfo *fInfo) {
-  d("fileInfo:fileName: %s\r\n", fInfo->file_name);
-  d("fileInfo:sizeBytes: %d\r\n", fInfo->size_bytes);
+  D("fileInfo:fileName: %s" D_CRLF, fInfo->file_name);
+  D("fileInfo:sizeBytes: %d" D_CRLF, fInfo->size_bytes);
   return true;
 }
 
@@ -508,7 +554,11 @@ bool handle_my_info(meshtastic_MyNodeInfo *myNodeInfo) {
 
 bool handle_node_info(meshtastic_NodeInfo *nodeInfo) {
   if (node_report_callback == NULL) {
+#if defined(ESP_PLATFORM)
+    ESP_LOGW("Meshtastic", "Got a node report, but we don't have a callback");
+#else
     d("Got a node report, but we don't have a callback");
+#endif
     return false;
   }
   node.node_num = nodeInfo->num;
@@ -580,40 +630,48 @@ bool handle_mesh_packet(meshtastic_MeshPacket *meshPacket) {
       case meshtastic_PortNum_ADMIN_APP:
       case meshtastic_PortNum_ATAK_FORWARDER:
       case meshtastic_PortNum_ATAK_PLUGIN:
-      case meshtastic_PortNum_AUDIO_APP: 
-      case meshtastic_PortNum_DETECTION_SENSOR_APP: 
-      case meshtastic_PortNum_IP_TUNNEL_APP: 
+      case meshtastic_PortNum_AUDIO_APP:
+      case meshtastic_PortNum_DETECTION_SENSOR_APP:
+      case meshtastic_PortNum_IP_TUNNEL_APP:
       case meshtastic_PortNum_MAP_REPORT_APP:
-      case meshtastic_PortNum_MAX: 
-      case meshtastic_PortNum_NEIGHBORINFO_APP: 
-      case meshtastic_PortNum_NODEINFO_APP: 
+      case meshtastic_PortNum_MAX:
+      case meshtastic_PortNum_NEIGHBORINFO_APP:
+      case meshtastic_PortNum_NODEINFO_APP:
       case meshtastic_PortNum_PAXCOUNTER_APP:
-      case meshtastic_PortNum_POSITION_APP: 
-      case meshtastic_PortNum_POWERSTRESS_APP: 
-      case meshtastic_PortNum_PRIVATE_APP: 
+      case meshtastic_PortNum_POSITION_APP:
+      case meshtastic_PortNum_POWERSTRESS_APP:
+      case meshtastic_PortNum_PRIVATE_APP:
       case meshtastic_PortNum_RANGE_TEST_APP:
-      case meshtastic_PortNum_REMOTE_HARDWARE_APP: 
-      case meshtastic_PortNum_REPLY_APP: 
+      case meshtastic_PortNum_REMOTE_HARDWARE_APP:
+      case meshtastic_PortNum_REPLY_APP:
       case meshtastic_PortNum_ROUTING_APP:
       case meshtastic_PortNum_SERIAL_APP:
       case meshtastic_PortNum_SIMULATOR_APP:
       case meshtastic_PortNum_STORE_FORWARD_APP:
-      case meshtastic_PortNum_TELEMETRY_APP: 
+      case meshtastic_PortNum_TELEMETRY_APP:
       case meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP:
-      case meshtastic_PortNum_TRACEROUTE_APP: 
-      case meshtastic_PortNum_UNKNOWN_APP: 
-      case meshtastic_PortNum_WAYPOINT_APP: 
+      case meshtastic_PortNum_TRACEROUTE_APP:
+      case meshtastic_PortNum_UNKNOWN_APP:
+      case meshtastic_PortNum_WAYPOINT_APP:
       case meshtastic_PortNum_ZPS_APP:
         if (portnum_callback != NULL)
           portnum_callback(meshPacket->from, meshPacket->to, meshPacket->channel, meshPacket->decoded.portnum, &meshPacket->decoded.payload);
         break;
 
       default:
+#if defined(ESP_PLATFORM)
+          ESP_LOGW("Meshtastic", "Unknown portnum %d\r\n", meshPacket->decoded.portnum);
+#else
           d("Unknown portnum %d\r\n", meshPacket->decoded.portnum);
-            return false;
+#endif
+          return false;
     }
   } else if  (meshPacket -> which_payload_variant == meshtastic_MeshPacket_encrypted_tag ) {
+#if defined(ESP_PLATFORM)
+      ESP_LOGD("Meshtastic", "encoded packet From: %x To: %x\r\n", meshPacket->from, meshPacket->to);
+#else
       d("encoded packet From: %x To: %x\r\n", meshPacket->from, meshPacket->to);
+#endif
       if (encrypted_callback != NULL) {
           encrypted_callback(meshPacket->from, meshPacket->to, meshPacket->channel, meshPacket->public_key, &meshPacket->encrypted);
     	    return true;
@@ -640,7 +698,11 @@ bool handle_packet(uint32_t now, size_t payload_len) {
   toRadio.want_config_id = SPECIAL_NONCE;
 
   if (!status) {
+#if defined(ESP_PLATFORM)
+    ESP_LOGW("Meshtastic", "Decoding failed");
+#else
     d("Decoding failed");
+#endif
     return false;
   }
 
@@ -678,7 +740,7 @@ bool handle_packet(uint32_t now, size_t payload_len) {
       return handle_fileInfo_tag(&fromRadio.fileInfo); 
 
     default:
-#ifdef MT_DEBUGGING
+#if defined(MT_DEBUGGING) || defined(ESP_PLATFORM)
         // Rate limit
         // Serial input buffer overflows during initial connection, while we're slowly printing these at 9600 baud
         constexpr uint32_t limitMs = 100; 
@@ -686,14 +748,23 @@ bool handle_packet(uint32_t now, size_t payload_len) {
         uint32_t now = millis();
         if (now - lastLog > limitMs) {
             lastLog = now;
+#if defined(ESP_PLATFORM)
+            ESP_LOGW("Meshtastic", "Got a payloadVariant we don't recognize: %i",
+                (int)fromRadio.which_payload_variant);
+#else
             Serial.print("Got a payloadVariant we don't recognize: ");
             Serial.println(fromRadio.which_payload_variant);
+#endif
         }
 #endif
       return false;
   }
 
+#if defined(ESP_PLATFORM)
+  ESP_LOGD("Meshtastic", "Handled a packet");
+#else
   d("Handled a packet");
+#endif
 }
 
 void mt_protocol_check_packet(uint32_t now) {
@@ -704,7 +775,11 @@ void mt_protocol_check_packet(uint32_t now) {
   }
 
   if (pb_buf[0] != MT_MAGIC_0 || pb_buf[1] != MT_MAGIC_1) {
+#if defined(ESP_PLATFORM)
+    ESP_LOGW("Meshtastic", "Got bad magic");
+#else
     d("Got bad magic");
+#endif
     memset(pb_buf, 0, PB_BUFSIZE);
     pb_size = 0;
     return;
@@ -712,7 +787,11 @@ void mt_protocol_check_packet(uint32_t now) {
 
   uint16_t payload_len = pb_buf[2] << 8 | pb_buf[3];
   if (payload_len > PB_BUFSIZE) {
+#if defined(ESP_PLATFORM)
+    ESP_LOGW("Meshtastic", "Got packet claiming to be ridiculous length");
+#else
     d("Got packet claiming to be ridiculous length");
+#endif
     return;
   }
 
@@ -762,7 +841,11 @@ bool mt_loop(uint32_t now) {
     }
 
   } else {
+#if defined(ESP_PLATFORM)
+    ESP_LOGE("Meshtastic", "mt_loop() called but it was never initialized");
+#else
     Serial.println("mt_loop() called but it was never initialized");
+#endif
     while(1);
   }
 

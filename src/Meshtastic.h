@@ -1,7 +1,10 @@
 #ifndef MESHTASTIC_H
 #define MESHTASTIC_H
 
+#if defined(ARDUINO)
 #include <Arduino.h>
+#endif
+
 #include "meshtastic/mesh.pb.h"
 #include "pb_encode.h"
 #include "pb_decode.h"
