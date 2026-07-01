@@ -14,7 +14,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
       - name: Check for compliance
-        uses: arduino/arduino-lint-action@v2.0.0
+        uses: arduino/arduino-lint-action@v3.0.0
         with:
             library-manager: update
             project-type: library
