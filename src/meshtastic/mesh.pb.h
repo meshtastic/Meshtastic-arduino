@@ -341,6 +341,10 @@ typedef enum _meshtastic_HardwareModel {
     meshtastic_HardwareModel_HELTEC_RCC6 = 143,
     /* Seeed Wio Tracker L1 Pro 1W, nRF52840 + SX1262 with 1 W external PA */
     meshtastic_HardwareModel_SEEED_WIO_TRACKER_L1_PRO_1W = 144,
+    /* Meshnology W12 */
+    meshtastic_HardwareModel_MESHNOLOGY_W12 = 145,
+    /* Seeed Studio MeshPager X2 */
+    meshtastic_HardwareModel_MESHPAGER_X2 = 146,
     /* ------------------------------------------------------------------------------------------------------------------------------------------
  Reserved ID For developing private Ports. These will show up in live traffic sparsely, so we can use a high number. Keep it within 8 bits.
  ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -738,7 +742,7 @@ typedef struct _meshtastic_Position {
    multiplied with DOP to calculate positional accuracy
  Default: "'bout three meters-ish" :) */
     uint32_t gps_accuracy;
-    /* Ground speed in m/s and True North TRACK in 1/100 degrees
+    /* Ground speed in km/h and True North TRACK in 1/100 degrees
  Clarification of terms:
  - "track" is the direction of motion (measured in horizontal plane)
  - "heading" is where the fuselage points (measured in horizontal plane)
