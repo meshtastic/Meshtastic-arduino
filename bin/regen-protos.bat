@@ -1,1 +1,1 @@
-cd protobufs && ..\nanopb-0.4.9\generator-bin\protoc.exe --experimental_allow_proto3_optional "--nanopb_out=-S.c -v:..\src" -I=..\protobufs\ ..\protobufs\meshtastic\*.proto && rm ../src/meshtastic/deviceonly.* 
+cd protobufs && ..\nanopb-0.4.9\generator-bin\protoc.exe --experimental_allow_proto3_optional "--nanopb_out=-S.c -v:..\src" -I=..\protobufs\ ..\protobufs\meshtastic\*.proto && rm ../src/meshtastic/deviceonly.* ../src/meshtastic/deviceonly_legacy.* 

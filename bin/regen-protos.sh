@@ -10,8 +10,9 @@ echo "prebuilt binaries for your computer into nanopb-0.4.9"
 cd protobufs
 ../nanopb-0.4.9/generator-bin/protoc --experimental_allow_proto3_optional "--nanopb_out=-S.c -v:../src/" -I=../protobufs meshtastic/*.proto
 
-# remove the device only protobuf, so we don't need std::vector
+# remove the device only protobufs, so we don't need std::vector
 rm -rf ../src/meshtastic/deviceonly.*
+rm -rf ../src/meshtastic/deviceonly_legacy.*
 
 #echo "Regenerating protobuf documentation - if you see an error message"
 #echo "you can ignore it unless doing a new protobuf release to github."

@@ -9,7 +9,7 @@
 PB_BIND(meshtastic_DeviceMetrics, meshtastic_DeviceMetrics, AUTO)
 
 
-PB_BIND(meshtastic_EnvironmentMetrics, meshtastic_EnvironmentMetrics, AUTO)
+PB_BIND(meshtastic_EnvironmentMetrics, meshtastic_EnvironmentMetrics, 2)
 
 
 PB_BIND(meshtastic_PowerMetrics, meshtastic_PowerMetrics, AUTO)
@@ -19,6 +19,9 @@ PB_BIND(meshtastic_AirQualityMetrics, meshtastic_AirQualityMetrics, AUTO)
 
 
 PB_BIND(meshtastic_LocalStats, meshtastic_LocalStats, AUTO)
+
+
+PB_BIND(meshtastic_TrafficManagementStats, meshtastic_TrafficManagementStats, AUTO)
 
 
 PB_BIND(meshtastic_HealthMetrics, meshtastic_HealthMetrics, AUTO)
@@ -31,6 +34,15 @@ PB_BIND(meshtastic_Telemetry, meshtastic_Telemetry, 2)
 
 
 PB_BIND(meshtastic_Nau7802Config, meshtastic_Nau7802Config, AUTO)
+
+
+PB_BIND(meshtastic_AS3935Config, meshtastic_AS3935Config, AUTO)
+
+
+PB_BIND(meshtastic_SEN5XState, meshtastic_SEN5XState, AUTO)
+
+
+PB_BIND(meshtastic_SEN6XState, meshtastic_SEN6XState, AUTO)
 
 
 
