@@ -15,7 +15,7 @@ jobs:
           ~/.arduino15
         key: ${{ runner.os }}-arduino
     - name: Install nix
-      uses: cachix/install-nix-action@v31
+      uses: cachix/install-nix-action@v32
     - run: |
         sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
         sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
