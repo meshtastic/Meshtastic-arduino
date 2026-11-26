@@ -99,6 +99,7 @@ static bool syncing = false;
 static bool haveNodeReport = false;
 static uint32_t lastReportRequest = 0;
 static uint32_t lastReportDone = 0;
+static uint32_t lastReportProgress = 0;  // millis() of the last node report frame, for spotting a stalled report
 static uint32_t lastRadioActivity = 0;  // millis() of the last frame handled, 0 = never
 static bool dirty = true;
 
@@ -175,6 +176,7 @@ static void markActivity() {
 
 static void onNodeReport(mt_node_t *node, mt_nr_progress_t progress) {
   markActivity();
+  lastReportProgress = millis();
   if (node == nullptr) {
     syncing = false;
     if (progress == MT_NR_DONE) {
@@ -630,12 +632,21 @@ void loop() {
   // A report can finish inside mt_loop and set lastReportDone past the time read above.
   now = millis();
 
-  uint32_t interval = haveNodeReport ? kNodeReportIntervalMs : kNodeReportRetryMs;
-  uint32_t since = haveNodeReport ? lastReportDone : lastReportRequest;
-  bool due = lastReportRequest == 0 ||
-    (now - since > interval && now - lastReportRequest > kNodeReportRetryMs / 2);
+  bool due;
+  if (syncing) {
+    // The radio restarts its stream on every request, so while a report is coming in only
+    // ask again once it has stalled: no node for kNodeReportRetryMs. A large node list can
+    // take well over that to stream in full at this baud rate.
+    due = now - lastReportProgress > kNodeReportRetryMs;
+  } else {
+    uint32_t interval = haveNodeReport ? kNodeReportIntervalMs : kNodeReportRetryMs;
+    uint32_t since = haveNodeReport ? lastReportDone : lastReportRequest;
+    due = lastReportRequest == 0 ||
+      (now - since > interval && now - lastReportRequest > kNodeReportRetryMs / 2);
+  }
   if (due) {
     lastReportRequest = now;
+    lastReportProgress = now;
     if (mt_request_node_report(onNodeReport)) {
       syncing = true;
       dirty = true;
