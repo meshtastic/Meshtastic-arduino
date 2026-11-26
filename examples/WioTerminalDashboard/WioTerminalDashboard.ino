@@ -434,9 +434,10 @@ static void drawRadioPage() {
   float chUtil = localStats.valid ? localStats.chUtil : mine->chUtil;
   float airUtil = localStats.valid ? localStats.airUtil : mine->airUtil;
 
-  const int gap = 8, w = (kWidth - gap * 3) / 2, h = 54;
+  // Three rows of tiles plus the status line below them have to fit in kBodyHeight (190).
+  const int gap = 6, w = (kWidth - gap * 3) / 2, h = 52;
   int x1 = gap, x2 = gap * 2 + w;
-  int y = 6;
+  int y = 4;
   drawTile(x1, y, w, h, "Battery", batteryText(*mine), batteryColor(mine->battery));
   drawTile(x2, y, w, h, "Voltage", fmt(mine->voltage, 2, " V"), TFT_WHITE);
   y += h + gap;
@@ -456,7 +457,7 @@ static void drawRadioPage() {
     line += "  up " + uptimeText(localStats.uptime);
     if (localStats.noiseFloor != 0) line += "  noise " + String(localStats.noiseFloor) + " dBm";
   }
-  body.drawString(line, gap, y + h + 6);
+  body.drawString(line, gap, y + h + 2);
 }
 
 static void drawColumnHeader(const char *const *labels, const int *xs, int count) {
@@ -626,6 +627,8 @@ void loop() {
   uint32_t now = millis();
   mt_loop(now);
   pollButtons();
+  // A report can finish inside mt_loop and set lastReportDone past the time read above.
+  now = millis();
 
   uint32_t interval = haveNodeReport ? kNodeReportIntervalMs : kNodeReportRetryMs;
   uint32_t since = haveNodeReport ? lastReportDone : lastReportRequest;
